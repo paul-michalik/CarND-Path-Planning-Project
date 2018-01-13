@@ -23,6 +23,7 @@
     <None Include="..\..\install-ubuntu.sh" />
     <None Include="..\..\README.md" />
     <None Include="..\..\install-windows.bat" />
+    <None Include="..\..\.gitignore" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\json.hpp">

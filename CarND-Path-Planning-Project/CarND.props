@@ -22,6 +22,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link />
     <Link>

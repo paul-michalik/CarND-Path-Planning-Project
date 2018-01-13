@@ -2,4 +2,5 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/CarND-Path-Planning-Project/.vs/CarND-Path-Planning-Project/v15
+/CarND-Path-Planning-Project/.vs/
+/products/
