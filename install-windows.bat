@@ -37,12 +37,10 @@ if not exist "%VcPkgDir%" (
 )
 
 if not exist "%VcPkgDir%" echo vcpkg path is not set correctly, bailing out & exit /b 1
+set "VcPkgPath=%VcPkgDir%\vcpkg.exe"
+if not exist "%VcPkgPath%" echo vcpkg path is not set correctly, bailing out & exit /b 1
 
 echo. & echo Bootstrapping dependencies for triplet: %VcPkgTriplet% & echo.
-
-set "VcPkgPath=%VcPkgDir%\vcpkg.exe"
-
-if not exist "%VcPkgPath%" echo vcpkg path is not set correctly, bailing out & exit /b 1
 
 rem ==============================
 rem Update and Install packages.
