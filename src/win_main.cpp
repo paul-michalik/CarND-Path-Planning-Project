@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "pp_map.h"
+#include "pp_planner.h"
 #include <fstream>
 #include <math.h>
 #include <uWS/uWS.h>
@@ -96,7 +98,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 	prev_wp = next_wp-1;
 	if(next_wp == 0)
 	{
-		prev_wp  = maps_x.size()-1;
+		prev_wp  = static_cast<int>(maps_x.size())-1;
 	}
 
 	double n_x = maps_x[next_wp]-maps_x[prev_wp];
@@ -175,7 +177,7 @@ int main() {
   vector<double> map_waypoints_s;
 
   // Waypoint map to read from
-  string map_file_ = "../data/highway_map.csv";
+  string map_file_ = "./data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
 
@@ -201,7 +203,17 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER>* ws, char *data, size_t length,
+  pp::planner planner{
+      pp::map{
+          map_waypoints_x,
+          map_waypoints_y,
+          map_waypoints_s,
+          map_waypoints_dx,
+          map_waypoints_dy
+      }
+  };
+
+  h.onMessage([&planner](uWS::WebSocket<uWS::SERVER>* ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -238,15 +250,15 @@ int main() {
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
-          	json msgJson;
+           auto next_vals = planner.get_next_vals();
 
-          	vector<double> next_x_vals;
-          	vector<double> next_y_vals;
-
-
+           json msgJson{
+               {"next_x", next_vals.first},
+               {"next_y", next_vals.second}
+           };
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          	msgJson["next_x"] = next_x_vals;
-          	msgJson["next_y"] = next_y_vals;
+          	//msgJson["next_x"] = next_vals.first;
+          	//msgJson["next_y"] = next_vals.second();
 
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
