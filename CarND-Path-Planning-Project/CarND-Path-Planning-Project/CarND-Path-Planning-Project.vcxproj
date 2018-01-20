@@ -135,7 +135,6 @@
     <None Include="..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\json.hpp" />
     <ClInclude Include="..\..\src\pp_map.h" />
     <ClInclude Include="..\..\src\pp_planner.h" />
     <ClInclude Include="..\..\src\stdafx.h" />

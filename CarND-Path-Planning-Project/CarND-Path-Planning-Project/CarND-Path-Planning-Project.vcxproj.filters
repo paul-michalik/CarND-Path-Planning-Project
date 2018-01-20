@@ -26,9 +26,6 @@
     <None Include="..\..\.gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\json.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
