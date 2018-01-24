@@ -153,7 +153,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 {
     int prev_wp = -1;
 
-    while (s > maps_s[prev_wp + 1] && (prev_wp < (int)(maps_s.size() - 1)))
+    while ((prev_wp < (int)(maps_s.size() - 1)) && s > maps_s[prev_wp + 1])
     {
         prev_wp++;
     }
@@ -226,8 +226,8 @@ int main()
     };
 
     auto prev_time = std::chrono::high_resolution_clock::now();
-
-    h.onMessage([&planner, &prev_time](uWS::WebSocket<uWS::SERVER>* ws, char *data, size_t length,
+ 
+    h.onMessage([&](uWS::WebSocket<uWS::SERVER>* ws, char *data, size_t length,
         uWS::OpCode opCode) {
             // "42" at the start of the message means there's a websocket message event.
             // The 4 signifies a websocket message
@@ -271,16 +271,17 @@ int main()
                             std::chrono::high_resolution_clock::now();
                         auto diff_time = 
                             std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time);
-                        auto next_vals = planner.get_next_vals(t, diff_time.count()/1000.);
+                        auto next_vals = planner.get_next_vals(t, 0.02/*diff_time.count()/1000.*/);
                         prev_time = curr_time;
 
-                        json msgJson{
-                            {"next_x", next_vals.first},
-                            {"next_y", next_vals.second}
-                        };
                         // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-                        //msgJson["next_x"] = next_vals.first;
-                        //msgJson["next_y"] = next_vals.second();
+                        //json msgJson{
+                        //    {"next_x", next_vals.first},
+                        //    {"next_y", next_vals.second}
+                        //};
+                        json msgJson;
+                        msgJson["next_x"] = next_vals.first;
+                        msgJson["next_y"] = next_vals.second;
 
                         auto msg = "42[\"control\"," + msgJson.dump() + "]";
 
@@ -310,13 +311,14 @@ int main()
             }
         });
 
-    h.onConnection([&h](uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest req) {
+    h.onConnection([&](uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest req) {
+        prev_time = std::chrono::high_resolution_clock::now();
         std::cout << "Connected!!!" << std::endl;
         });
 
     h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER>* ws, int code,
         char *message, size_t length) {
-            ws->close();
+            if (ws) ws->close();
             std::cout << "Disconnected" << std::endl;
         });
 

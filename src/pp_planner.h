@@ -8,20 +8,19 @@
 #include <limits>
 #include <algorithm>
 #include <vector>
+#include <tuple>
 
-#ifndef NDEBUG
-#define DEBUG_LOG std::cout
-#else
-static struct {} debug_log_disabled_;
-template<typename T>
-debug_log_disabled_& operator << (debug_log_disabled_& any, T const& thing)
-{
-    return any;
-}
-#define DEBUG_LOG debug_log_disabled_
-#endif
-
-
+//#ifndef _NDEBUG
+//#define DEBUG_LOG std::cout
+//#else
+//static struct _ {
+//    template<typename T> _& operator << (T&&)
+//    {
+//        return *this;
+//    }
+//} debug_log_disabled_;
+//#define DEBUG_LOG debug_log_disabled_
+//#endif
 
 namespace pp_l {
     using json = ::nlohmann::json;
@@ -211,7 +210,7 @@ namespace pp_l {
     xy_t RoadMap::to_xy(double s, double d) const
     {
         int wp1 = -1;
-        while ((s > waypoints[wp1 + 1].s) && (wp1 < int(waypoints.size() - 1)))
+        while ((wp1 < int(waypoints.size() - 1)) && (s > waypoints[wp1 + 1].s))
             wp1++;
 
         int wp2 = (wp1 + 1) % waypoints.size();
@@ -505,7 +504,9 @@ namespace pp_l {
 
     void PathPlanner::run(const telemetry_data & ego, path_t & path, double dt)
     {
-        // 1a. Get reference point: where we start to build the plan
+        //std::cout << __FUNCTION__ << std::endl;
+
+         // 1a. Get reference point: where we start to build the plan
         compute_reference(ego, dt);
         // 1b. Track laps just for the shake of it
         track_lap(ego);
@@ -523,6 +524,8 @@ namespace pp_l {
 
     void PathPlanner::track_lap(const telemetry_data & ego)
     {
+        //std::cout << __FUNCTION__ << std::endl;
+
         if (ego_laps_tick == 0) {
             ego_start_position = {ego.s, ego.d};
         }
@@ -537,14 +540,14 @@ namespace pp_l {
             ego_laps_tick = 0;
             ego_passed_zero_s = false;
 
-            DEBUG_LOG << "#################################################################";
+            //std::cout << "#################################################################";
         } else {
-            DEBUG_LOG << "_________________________________________________________________";
+            //std::cout << "_________________________________________________________________";
         }
 
         ego_laps_tick++;
 
-        DEBUG_LOG
+        /*std::cout
             << endl
             << endl
             << "LAP " << (ego_laps + 1)
@@ -552,11 +555,13 @@ namespace pp_l {
             << " (s=" << fixed << setprecision(1) << ego.s
             << ", d=" << fixed << setprecision(1) << ego.d << ")"
             << " PLANNED " << ego.previous_path.size() << " points"
-            << endl;
+            << endl;*/
     }
 
     void PathPlanner::compute_reference(const telemetry_data & ego, double dt)
     {
+        //std::cout << __FUNCTION__ << std::endl;
+
         const int planned_size = ego.previous_path.size();
 
         // If previous path almost empty, use the current ego position
@@ -595,10 +600,12 @@ namespace pp_l {
 
     void PathPlanner::process_sensor_fusion(const telemetry_data & ego, double dt)
     {
+        //std::cout << __FUNCTION__ << std::endl;
+
         lane_info.clear();
         lane_info.resize(track.lane_count);
 
-        std::cout << "SENSOR FUSION" << endl;
+        //std::cout << "SENSOR FUSION" << endl;
 
         const int planned_size = ego.previous_path.size();
 
@@ -618,15 +625,15 @@ namespace pp_l {
                 // absolute s-distance
                 auto car_gap = fabs(car_next_s - ref_s);
 
-                std::cout << "  CAR " << setw(2) << car.uid
+                /*std::cout << "  CAR " << setw(2) << car.uid
                     << "  lane=" << car_lane
                     << "  v=" << setw(4) << mps2mph(norm(car.vx, car.vy))
                     << "  s=" << setw(6) << car.s
                     << "  s'=" << setw(6) << car_next_s
                     << "  gap=" << setw(7) << (car_next_s - ref_s)
-                    << endl;
+                    << endl;*/
 
-                // if getting under the buffer
+                    // if getting under the buffer
                 if (in_front && car_gap < lane.front_gap) {
                     lane.front_car = car.uid;
                     lane.front_gap = car_gap;
@@ -643,36 +650,38 @@ namespace pp_l {
             }
         }
 
-#ifndef NDEBUG
-        {
-            auto & log_ = std::cout;
-            log_ << "LANE INFO" << endl;
-            for (int i = 0; i < lane_info.size(); i++) {
-                auto & l = lane_info[i];
-                log_ << "  LANE " << i << ": ";
-                if (l.is_clear())
-                    log_ << "CLEAR";
-                else {
-                    log_ << (l.feasible ? "FEASIBLE " : "         ");
-                    log_ << "[";
-                    log_ << fixed << setw(2) << setprecision(0);
-                    log_ << l.front_gap;
-                    if (isfinite(l.front_gap))
-                        log_ << "+" << mps2mph(l.front_speed) << "t";
-                    log_ << "; ";
-                    log_ << -l.back_gap;
-                    if (isfinite(l.back_gap))
-                        log_ << "+" << mps2mph(l.back_speed) << "t";
-                    log_ << "]";
-                }
-                log_ << endl;
-            }
-        }
-#endif
+        //#ifndef NDEBUG
+        //        {
+        //            auto & log_ = std::cout;
+        //            log_ << "LANE INFO" << endl;
+        //            for (int i = 0; i < lane_info.size(); i++) {
+        //                auto & l = lane_info[i];
+        //                log_ << "  LANE " << i << ": ";
+        //                if (l.is_clear())
+        //                    log_ << "CLEAR";
+        //                else {
+        //                    log_ << (l.feasible ? "FEASIBLE " : "         ");
+        //                    log_ << "[";
+        //                    log_ << fixed << setw(2) << setprecision(0);
+        //                    log_ << l.front_gap;
+        //                    if (isfinite(l.front_gap))
+        //                        log_ << "+" << mps2mph(l.front_speed) << "t";
+        //                    log_ << "; ";
+        //                    log_ << -l.back_gap;
+        //                    if (isfinite(l.back_gap))
+        //                        log_ << "+" << mps2mph(l.back_speed) << "t";
+        //                    log_ << "]";
+        //                }
+        //                log_ << endl;
+        //            }
+        //        }
+        // #endif
     }
 
     void PathPlanner::set_state(const telemetry_data & ego, STATE new_state)
     {
+        //std::cout << __FUNCTION__ << std::endl;
+
         if (state_ != new_state) {
             // Set the new state and the reference position
             state_ = new_state;
@@ -680,9 +689,51 @@ namespace pp_l {
         }
     }
 
+    auto pp_get_lane_speed(PathPlanner const& p_, lane_info_t l_)
+    {
+        return l_.front_gap > p_.lane_horizon
+            ? c_inf
+            : l_.back_gap < p_.lane_change_back_buffer
+            ? l_.back_speed
+            : l_.front_speed;
+    }
+
+    auto pp_get_best_lane(PathPlanner const& p_)
+    {
+        using best_lane_info_t = std::tuple<int, double, lane_info_t>;
+        std::vector<best_lane_info_t> t_lane_info;
+        {
+            int t_counter = 0;
+            std::transform(
+                p_.lane_info.begin(), p_.lane_info.end(),
+                std::back_inserter(t_lane_info),
+                [&](auto const& l_) {
+                return std::make_tuple(
+                    t_counter++,
+                    pp_get_lane_speed(p_, l_),
+                    l_);
+            });
+        }
+
+        // pick only clear lanes <2> with infinite velocities <1>
+        t_lane_info.erase(std::remove_if(t_lane_info.begin(), t_lane_info.end(), [&](best_lane_info_t const& lane_) {
+            return !get<2>(lane_).is_clear() && get<1>(lane_) < c_inf;
+        }), t_lane_info.end());
+
+        // sort lanes by distance to reference lane
+        std::sort(t_lane_info.begin(), t_lane_info.end(), [&](auto const& l_, auto const& r_) {
+            return abs(get<0>(l_) - p_.ref_lane) < abs(get<0>(l_) - p_.ref_lane);
+        });
+
+        return !t_lane_info.empty() ? get<0>(t_lane_info.front()) : p_.ref_lane;
+    }
+
     int PathPlanner::get_best_lane() const
     {
-
+        //std::cout << __FUNCTION__ << std::endl;
+#ifdef PP_GET_BEST_LANE
+        return pp_get_best_lane(*this);
+#else
         if (lane_info[1].is_clear())
             return 1;
 
@@ -721,16 +772,19 @@ namespace pp_l {
                 return lane_i.front_gap >= lane_j.front_gap;
             else
                 return i_v > j_v;
-            });
+        });
 
         return lanes[0];
+#endif
     }
 
     void PathPlanner::create_plan(const telemetry_data & ego, double dt)
     {
-        std::cout << "PLANNING" << endl;
+        //std::cout << __FUNCTION__ << std::endl;
 
-        // Give it a safety margin
+         //std::cout << "PLANNING" << endl;
+
+         // Give it a safety margin
         const double road_speed_limit = mph2mps(track.speed_limit_mph) - 0.2;
         const double cte = (ref_d - track.lane_center(target_lane));
 
@@ -859,7 +913,9 @@ namespace pp_l {
 
     void PathPlanner::collision_avoidance()
     {
-        // Avoid collisions
+        //std::cout << __FUNCTION__ << std::endl;
+
+         // Avoid collisions
         if (lane_info[target_lane].front_gap < 30)
         {
             if (lane_info[target_lane].front_gap < 15)
@@ -873,7 +929,9 @@ namespace pp_l {
 
     void PathPlanner::speed_control()
     {
-        // Adjust speed
+        //std::cout << __FUNCTION__ << std::endl;
+
+         // Adjust speed
         if (target_speed < ref_speed) {
             // deccelerate
             target_speed = fmax(target_speed, ref_speed - accel);
@@ -889,6 +947,8 @@ namespace pp_l {
         const double target_speed,
         path_t & path, double dt)
     {
+        //std::cout << __FUNCTION__ << std::endl;
+
         std::cout << "TRAJECTORY" << endl
             << " * TARGET LANE " << target_lane << endl
             << " * TARGET SPEED " << setprecision(1) << mps2mph(target_speed)
@@ -954,17 +1014,25 @@ namespace pp_l {
 namespace pp {
     class planner {
         pp::map _map;
+
+        mutable pp_l::PathPlanner _planner;
+
     public:
         planner(map map_)
             : _map(map_)
-        {}
+        {
+            _planner.initialize(_map.get_filename());
+            _planner.reset();
+        }
 
         auto get_next_vals(pp_l::telemetry_data const& env_, double dt_) const
         {
-            pp_l::PathPlanner pl{};
+            //std::cout
+            //    << __FUNCTION__ << std::endl
+            //    << "Time difference: " << dt_ << std::endl;
+
             pp_l::path_t path;
-            pl.initialize(_map.get_filename());
-            pl.run(env_, path, dt_);
+            _planner.run(env_, path, dt_);
 
             return std::make_pair(path.x, path.y);
         }
