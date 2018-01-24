@@ -83,20 +83,6 @@ namespace pp_l {
         tk::spline s_y_;
     };
 
-
-    using xy_t = pp::cpoint;
-
-    using sd_t = pp::fpoint;
-
-    // cartesian point
-    //struct xy_t {
-    //    double x, y;
-    //};
-    // freenet point
-    //struct sd_t {
-    //    double s, d;
-    //};
-
     // waypoint
     struct waypoint_t {
         double x, y, s, dx, dy;
@@ -113,129 +99,6 @@ namespace pp_l {
             return {x[i],y[i],s[i],dx[i],dy[i]};
         }
     };
-
-    //using RoadMap = pp::map;
-
-    struct RoadMap {
-        constexpr static double default_fov = M_PI / 4;
-        // The max s value before wrapping around the track back to 0
-        const double max_s = 6945.554;
-
-        waypoints_list waypoints;
-
-        // Load map waypoints from a csv file
-        void load(const string &filename);
-        void load(pp::map const & map_);
-
-        // Convert frenet to cartesian
-        xy_t get_xy(double s, double d) const;
-        
-        // Convert cartesian to frenet
-        //sd_t to_frenet(double x, double y, double theta) const;
-
-        // closest waypoint to x, y
-        int closest_waypoint(double x, double y) const;
-
-        // closest waypoint looking forward in the direction of theta
-        //int next_waypoint(double x, double y, double theta,
-        //    const double fov = default_fov) const;
-
-        auto get_max_s() const
-        {
-            return max_s;
-        }
-    };
-
-    // RoadMap definitions...
-
-    int RoadMap::closest_waypoint(double x, double y) const
-    {
-        double min_dist = std::numeric_limits<double>::max();
-        int closest = 0;
-        const int n = waypoints.x.size();
-        for (int i = 0; i < n; i++) {
-            auto dist = distance(x, y, waypoints.x[i], waypoints.y[i]);
-            if (dist < min_dist) {
-                min_dist = dist;
-                closest = i;
-            }
-        }
-        return closest;
-    }
-
-    //int RoadMap::next_waypoint(double x, double y, double theta, const double fov) const
-    //{
-    //    int next_wp = closest_waypoint(x, y);
-    //    xy_t wp = {waypoints.x[next_wp], waypoints.y[next_wp]};
-    //    auto heading = atan2(wp.y - y, wp.x - x);
-    //    auto angle = fabs(theta - heading);
-    //    if (angle > fov)
-    //        next_wp = (next_wp + 1) % waypoints.x.size();
-    //    return next_wp;
-    //}
-
-    xy_t RoadMap::get_xy(double s, double d) const
-    {
-        int wp1 = -1;
-        while ((wp1 < int(waypoints.size() - 1)) && (s > waypoints[wp1 + 1].s))
-            wp1++;
-
-        int wp2 = (wp1 + 1) % waypoints.size();
-
-        double heading = atan2(waypoints[wp2].y - waypoints[wp1].y,
-            waypoints[wp2].x - waypoints[wp1].x);
-        double seg_s = s - waypoints[wp1].s;
-        double seg_x = waypoints[wp1].x + seg_s * cos(heading);
-        double seg_y = waypoints[wp1].y + seg_s * sin(heading);
-        double perp = heading - pi() / 2;
-
-        double x = seg_x + d * cos(perp);
-        double y = seg_y + d * sin(perp);
-
-        return {x, y};
-    }
-
-    void RoadMap::load(pp::map const& map_)
-    {
-        waypoints.x = map_._map_waypoints_x;
-        waypoints.y = map_._map_waypoints_y;
-        waypoints.s = map_._map_waypoints_s;
-        waypoints.dx = map_._map_waypoints_dx;
-        waypoints.dy = map_._map_waypoints_dy;
-    }
-
-    void RoadMap::load(std::string const& filename_)
-    {
-        ifstream in_map_(filename_, ifstream::in);
-
-        waypoints.x.clear();
-        waypoints.y.clear();
-        waypoints.s.clear();
-        waypoints.dx.clear();
-        waypoints.dy.clear();
-
-        string line;
-        while (getline(in_map_, line)) {
-            istringstream iss(line);
-
-            double x, y, s, dx, dy;
-            iss >> x >> y >> s >> dx >> dy;
-
-            waypoints.x.push_back(x);
-            waypoints.y.push_back(y);
-            waypoints.s.push_back(s);
-            waypoints.dx.push_back(dx);
-            waypoints.dy.push_back(dy);
-        }
-
-        // Add the last point
-        waypoints.s.push_back(max_s);
-        waypoints.x.push_back(waypoints.x[0]);
-        waypoints.y.push_back(waypoints.y[0]);
-        waypoints.dx.push_back(waypoints.dx[0]);
-        waypoints.dy.push_back(waypoints.dy[0]);
-    }
-
 
     // Helper representing the set of lanes in the highway.
     // The origin is in the middle of the road; from there lanes
@@ -271,9 +134,9 @@ namespace pp_l {
         }
 
         // Lane for a given frenet point
-        int lane_at(sd_t frenet) const
+        int lane_at(pp::fpoint const & fp) const
         {
-            return lane_at(frenet.d);
+            return lane_at(fp.d);
         }
 
         // Lane at a given distance from the road center
@@ -300,7 +163,7 @@ namespace pp_l {
         {
             return x.size();
         }
-        void append(const xy_t xy)
+        void append(const pp::cpoint xy)
         {
             x.push_back(xy.x);
             y.push_back(xy.y);
@@ -335,7 +198,7 @@ namespace pp_l {
                       // Previous path data given to the Planner
         path_t previous_path;
         // Previous path's end s and d values
-        sd_t end_path;
+        pp::fpoint end_path;
         // Sensor Fusion Data, a list of all other cars on the same side of the road.
         vector<sensor_data> sensor_fusion;
     };
@@ -390,7 +253,7 @@ namespace pp_l {
 
     // Path Planner
     struct PathPlanner {
-        RoadMap   roadmap;
+        pp::map   roadmap;
         Track     track;
 
         double    accel = 0.2;     // m/s^2
@@ -418,7 +281,7 @@ namespace pp_l {
         // lap tracking for the ego
         size_t    ego_laps;
         size_t    ego_laps_tick;
-        sd_t      ego_start_position;
+        pp::fpoint      ego_start_position;
         bool      ego_passed_zero_s;
 
         // target lane for changing lane states
@@ -435,15 +298,9 @@ namespace pp_l {
         double    state_s_;
 
     public:
-
-        void initialize(const std::string & filename_)
-        {
-            roadmap.load(filename_);
-        }
-
         void initialize(const pp::map & map_)
         {
-            roadmap.load(map_);
+            roadmap = map_;
         }
 
         // Reset planner
@@ -946,7 +803,7 @@ namespace pp_l {
 
         // Add 3 more points spaced 30 m
         for (int i = 1; i <= 3; i++) {
-            xy_t next_wp = roadmap.get_xy(ref_s + 30 * i, target_d);
+            auto next_wp = roadmap.get_xy(ref_s + 30 * i, target_d);
             anchors.append(next_wp);
         }
 

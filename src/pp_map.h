@@ -3,9 +3,6 @@
 #include "udacity.h"
 #include "pp_geo.h"
 
-namespace pp_l {
-    class RoadMap;
-}
 namespace pp {
     class map { 
         std::vector<double> _map_waypoints_x;
@@ -15,8 +12,6 @@ namespace pp {
         std::vector<double> _map_waypoints_dy;
         std::string _filename;
     public:
-        friend pp_l::RoadMap;
-
         map() = default;
 
         map(std::vector<double> map_waypoints_x_,
