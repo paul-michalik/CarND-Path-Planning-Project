@@ -176,6 +176,8 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 }
 
+const double c_max_s = 6945.554;
+
 int main()
 {
     uWS::Hub h;
@@ -190,7 +192,7 @@ int main()
     // Waypoint map to read from
     string map_file_ = "./data/highway_map.csv";
     // The max s value before wrapping around the track back to 0
-    double max_s = 6945.554;
+    double max_s = c_max_s;
 
     ifstream in_map_(map_file_.c_str(), ifstream::in);
 
