@@ -44,6 +44,9 @@
     <ClInclude Include="..\..\src\ppl_planner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\pp_sensors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\win_main.cpp">

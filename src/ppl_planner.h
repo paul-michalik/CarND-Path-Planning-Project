@@ -1,17 +1,5 @@
 #pragma once
 
-//#ifndef _NDEBUG
-//#define DEBUG_LOG std::cout
-//#else
-//static struct _ {
-//    template<typename T> _& operator << (T&&)
-//    {
-//        return *this;
-//    }
-//} debug_log_disabled_;
-//#define DEBUG_LOG debug_log_disabled_
-//#endif
-
 namespace pp_l {
     using json = ::nlohmann::json;
     using namespace std;
@@ -155,86 +143,6 @@ namespace pp_l {
         }
     };
 
-    struct path_t
-    {
-        vector<double> x, y;
-
-        size_t size() const
-        {
-            return x.size();
-        }
-        void append(const pp::cpoint xy)
-        {
-            x.push_back(xy.x);
-            y.push_back(xy.y);
-        }
-        void append(const double x_, const double y_)
-        {
-            x.push_back(x_);
-            y.push_back(y_);
-        }
-    };
-
-    // Sensor Fusion data represint other cars
-    struct sensor_data {
-        int    uid;  // unique identifier
-        double x;    // x position in map coordinates
-        double y;    // y position in map coordinates
-        double vx;   // velocity in x direction (m/s)
-        double vy;   // velocity in y direction (m/s)
-        double s;    // s position in frenet coordinates
-        double d;    // d position in frenet coordinates
-    };
-
-    // Telemetry
-    struct telemetry_data {
-        // Main car's localization Data
-        double x;     // x position in map coordinates
-        double y;     // y position in map coordinates
-        double yaw;   // yaw angle in map coordinates (radians)
-        double speed; // speed (m/s)
-        double s;     // frenet
-        double d;     // frenet
-                      // Previous path data given to the Planner
-        path_t previous_path;
-        // Previous path's end s and d values
-        pp::fpoint end_path;
-        // Sensor Fusion Data, a list of all other cars on the same side of the road.
-        vector<sensor_data> sensor_fusion;
-    };
-
-    // Convert from json to sensor data
-    void from_json(const json & j, sensor_data &sensor)
-    {
-        sensor.uid = j[0].get<int>();
-        sensor.x = j[1];
-        sensor.y = j[2];
-        sensor.vx = j[3];
-        sensor.vy = j[4];
-        sensor.s = j[5];
-        sensor.d = j[6];
-    }
-
-    // Convert from json to telemetry data
-    void from_json(const json & j, telemetry_data &tele)
-    {
-        tele.x = j["x"];
-        tele.y = j["y"];
-        tele.yaw = deg2rad(j["yaw"]);
-        tele.s = j["s"];
-        tele.d = j["d"];
-        tele.speed = mph2mps(j["speed"]);
-
-        // Previous path data given to the Planner
-        tele.previous_path.x = j["previous_path_x"].get<vector<double>>();
-        tele.previous_path.y = j["previous_path_y"].get<vector<double>>();
-        // Previous path's end s and d values
-        tele.end_path.s = j["end_path_s"];
-        tele.end_path.d = j["end_path_d"];
-
-        // Sensor Fusion Data, a list of all other cars on the same side of the road.
-        tele.sensor_fusion = j["sensor_fusion"].get<vector<sensor_data>>();
-    }
     struct lane_info_t
     {
         int    front_car = -1;
@@ -318,29 +226,29 @@ namespace pp_l {
 
         // Run the planner with the given telemetry to generate the next trajectory.
         // dt is the simulator period.
-        void run(const telemetry_data & ego, path_t & path, double dt);
+        void run(const pp::telemetry_data & ego, pp::path & path, double dt);
 
     protected:
 
-        void track_lap(const telemetry_data &ego);
-        void compute_reference(const telemetry_data & ego, double dt);
-        void process_sensor_fusion(const telemetry_data & ego, double dt);
-        void create_plan(const telemetry_data & ego, double dt);
+        void track_lap(const pp::telemetry_data &ego);
+        void compute_reference(const pp::telemetry_data & ego, double dt);
+        void process_sensor_fusion(const pp::telemetry_data & ego, double dt);
+        void create_plan(const pp::telemetry_data & ego, double dt);
         void collision_avoidance();
         void speed_control();
-        void build_path(const telemetry_data & ego,
+        void build_path(const pp::telemetry_data & ego,
             const int target_lane,
             const double target_speed,
-            path_t & path,
+            pp::path & path,
             double dt);
 
         int get_best_lane() const;
-        void set_state(const telemetry_data & ego, STATE new_state);
+        void set_state(const pp::telemetry_data & ego, STATE new_state);
     };
 
     // == Implementations =================================
 
-    void PathPlanner::run(const telemetry_data & ego, path_t & path, double dt)
+    void PathPlanner::run(const pp::telemetry_data & ego, pp::path & path, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -360,7 +268,7 @@ namespace pp_l {
         build_path(ego, target_lane, target_speed, path, dt);
     }
 
-    void PathPlanner::track_lap(const telemetry_data & ego)
+    void PathPlanner::track_lap(const pp::telemetry_data & ego)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -396,7 +304,7 @@ namespace pp_l {
         << endl;*/
     }
 
-    void PathPlanner::compute_reference(const telemetry_data & ego, double dt)
+    void PathPlanner::compute_reference(const pp::telemetry_data & ego, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -436,7 +344,7 @@ namespace pp_l {
         ref_points += n_path_points - planned_size;
     }
 
-    void PathPlanner::process_sensor_fusion(const telemetry_data & ego, double dt)
+    void PathPlanner::process_sensor_fusion(const pp::telemetry_data & ego, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -516,7 +424,7 @@ namespace pp_l {
         // #endif
     }
 
-    void PathPlanner::set_state(const telemetry_data & ego, STATE new_state)
+    void PathPlanner::set_state(const pp::telemetry_data & ego, STATE new_state)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -616,7 +524,7 @@ namespace pp_l {
 #endif
     }
 
-    void PathPlanner::create_plan(const telemetry_data & ego, double dt)
+    void PathPlanner::create_plan(const pp::telemetry_data & ego, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -780,10 +688,10 @@ namespace pp_l {
     }
 
 
-    void PathPlanner::build_path(const telemetry_data & ego,
+    void PathPlanner::build_path(const pp::telemetry_data & ego,
         const int target_lane,
         const double target_speed,
-        path_t & path, double dt)
+        pp::path & path, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -795,7 +703,7 @@ namespace pp_l {
         const auto target_d = track.safe_lane_center(target_lane);
 
         // trajectory points
-        path_t anchors;
+        pp::path anchors;
 
         // Build a path tangent to the previous end state
         anchors.append(ref_x_prev, ref_y_prev);

@@ -139,6 +139,7 @@
     <ClInclude Include="..\..\src\pp_geo.h" />
     <ClInclude Include="..\..\src\pp_map.h" />
     <ClInclude Include="..\..\src\pp_planner.h" />
+    <ClInclude Include="..\..\src\pp_sensors.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\udacity.h" />
   </ItemGroup>

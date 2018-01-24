@@ -249,8 +249,8 @@ int main()
                         // j[1] is the data JSON object
 
                         // Main car's localization Data
-                        pp_l::telemetry_data t;
-                        pp_l::from_json(j[1], t);
+                        pp::telemetry_data t;
+                        pp::from_json(j[1], t);
 
                         //double car_x = j[1]["x"];
                         //double car_y = j[1]["y"];

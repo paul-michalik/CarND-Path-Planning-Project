@@ -2,6 +2,7 @@
 
 #include "pp_map.h"
 #include "pp_geo.h"
+#include "pp_sensors.h"
 #include "udacity.h"
 #include <spline.h>
 #include <json.hpp>
@@ -27,13 +28,13 @@ namespace pp {
             _planner.reset();
         }
 
-        auto get_next_vals(pp_l::telemetry_data const& env_, double dt_) const
+        auto get_next_vals(pp::telemetry_data const& env_, double dt_) const
         {
             //std::cout
             //    << __FUNCTION__ << std::endl
             //    << "Time difference: " << dt_ << std::endl;
 
-            pp_l::path_t path;
+            pp::path path;
             _planner.run(env_, path, dt_);
 
             return std::make_pair(path.x, path.y);
