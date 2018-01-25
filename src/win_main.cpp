@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "pp_map.h"
-#include "pp_planner.h"
+#include "map.h"
+#include "planner.h"
 #include <fstream>
 #include <math.h>
 #include <uWS/uWS.h>

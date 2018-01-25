@@ -1,8 +1,8 @@
 #pragma once
 
-#include "pp_map.h"
-#include "pp_geo.h"
-#include "pp_sensors.h"
+#include "map.h"
+#include "geo.h"
+#include "sensors.h"
 #include "udacity.h"
 #include <spline.h>
 #include <json.hpp>
