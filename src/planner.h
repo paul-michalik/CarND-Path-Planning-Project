@@ -168,7 +168,23 @@ namespace pp {
 
     inline bool test_eq(std::vector<lane_info> const& lane_env_model, pp_l::PathPlanner const& pl_)
     {
-        return true;
+        if (lane_env_model.size() == pl_.lane_info.size()) {
+            return std::equal(
+                lane_env_model.begin(), lane_env_model.end(),
+                pl_.lane_info.begin(), pl_.lane_info.end(),
+                [](pp::lane_info const& l_, pp_l::lane_info_t const & r_) {
+                return
+                    l_.is_feasible() == r_.feasible &&
+                    lane_info::id(l_.front) == r_.front_car &&
+                    lane_info::gap(l_.front) == r_.front_gap &&
+                    lane_info::speed(l_.front) == r_.front_speed &&
+                    lane_info::id(l_.back) == r_.back_car &&
+                    lane_info::gap(l_.back) == r_.back_gap &&
+                    lane_info::speed(l_.back) == r_.back_speed;
+            });
+        } else {
+            return false;
+        }
     }
 
     class planner {
