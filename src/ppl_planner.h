@@ -160,7 +160,7 @@ namespace pp_l {
         // dt is the simulator period.
         void run(const pp::telemetry_data & ego, pp::path & path, double dt);
 
-    protected:
+    public:
 
         void track_lap(const pp::telemetry_data &ego);
         void compute_reference(const pp::telemetry_data & ego, double dt);
@@ -200,20 +200,20 @@ namespace pp_l {
         build_path(ego, target_lane, target_speed, path, dt);
     }
 
-    void PathPlanner::track_lap(const pp::telemetry_data & ego)
+    void PathPlanner::track_lap(const pp::telemetry_data & t_)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
         if (ego_laps_tick == 0) {
-            ego_start_position = {ego.s, ego.d};
+            ego_start_position = {t_.ego.s, t_.ego.d};
         }
 
         // EGO .. current position
-        if (ego.s < ego_start_position.s) {
+        if (t_.ego.s < ego_start_position.s) {
             ego_passed_zero_s = true;
         }
 
-        if (ego_passed_zero_s && ego.s > ego_start_position.s) {
+        if (ego_passed_zero_s && t_.ego.s > ego_start_position.s) {
             ego_laps++;
             ego_laps_tick = 0;
             ego_passed_zero_s = false;
@@ -236,37 +236,37 @@ namespace pp_l {
         << endl;*/
     }
 
-    void PathPlanner::compute_reference(const pp::telemetry_data & ego, double dt)
+    void PathPlanner::compute_reference(const pp::telemetry_data & t_, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
-        const int planned_size = ego.previous_path.size();
+        const int planned_size = t_.previous_path.size();
 
         // If previous path almost empty, use the current ego position
         if (planned_size < 2)
         {
-            ref_x = ego.x;
-            ref_y = ego.y;
-            ref_yaw = ego.yaw;
-            ref_speed = ego.speed;
-            ref_s = ego.s;
-            ref_d = ego.d;
+            ref_x = t_.ego.x;
+            ref_y = t_.ego.y;
+            ref_yaw = t_.ego.yaw;
+            ref_speed = t_.ego.speed;
+            ref_s = t_.ego.s;
+            ref_d = t_.ego.d;
 
             ref_x_prev = ref_x - cos(ref_yaw);
             ref_y_prev = ref_y - sin(ref_yaw);
         } else // use the previous path
         {
-            ref_x = *(ego.previous_path.x.end() - 1);
-            ref_y = *(ego.previous_path.y.end() - 1);
+            ref_x = *(t_.previous_path.x.end() - 1);
+            ref_y = *(t_.previous_path.y.end() - 1);
 
-            ref_x_prev = *(ego.previous_path.x.end() - 2);
-            ref_y_prev = *(ego.previous_path.y.end() - 2);
+            ref_x_prev = *(t_.previous_path.x.end() - 2);
+            ref_y_prev = *(t_.previous_path.y.end() - 2);
 
             ref_yaw = std::atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
             ref_speed = pp::edistance(ref_x_prev, ref_y_prev, ref_x, ref_y) / dt;
 
-            ref_s = ego.end_path.s;
-            ref_d = ego.end_path.d;
+            ref_s = t_.end_path.s;
+            ref_d = t_.end_path.d;
         }
 
         ref_lane = track.lane_at(ref_d);
@@ -276,7 +276,7 @@ namespace pp_l {
         ref_points += n_path_points - planned_size;
     }
 
-    void PathPlanner::process_sensor_fusion(const pp::telemetry_data & ego, double dt)
+    void PathPlanner::process_sensor_fusion(const pp::telemetry_data & t_, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -285,9 +285,9 @@ namespace pp_l {
 
         //std::cout << "SENSOR FUSION" << endl;
 
-        const int planned_size = ego.previous_path.size();
+        const int planned_size = t_.previous_path.size();
 
-        for (auto & car : ego.sensor_fusion) {
+        for (auto & car : t_.sensor_fusion) {
             int car_lane = track.lane_at(car.d);
 
             // vehicle in the road
@@ -356,7 +356,7 @@ namespace pp_l {
         // #endif
     }
 
-    void PathPlanner::set_state(const pp::telemetry_data & ego, STATE new_state)
+    void PathPlanner::set_state(const pp::telemetry_data & t_, STATE new_state)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -456,7 +456,7 @@ namespace pp_l {
 #endif
     }
 
-    void PathPlanner::create_plan(const pp::telemetry_data & ego, double dt)
+    void PathPlanner::create_plan(const pp::telemetry_data & t_, double dt)
     {
         //std::cout << __FUNCTION__ << std::endl;
 
@@ -504,7 +504,7 @@ namespace pp_l {
                     // Change if we are not in the best one
                     if (lane_info[best_lane].front_speed > lane_info[target_lane].front_speed + 0.2) {
                         changing_lane = best_lane;
-                        set_state(ego, STATE::PLC);
+                        set_state(t_, STATE::PLC);
                         continue;
                     }
                 }
@@ -525,13 +525,13 @@ namespace pp_l {
 
                 if (lane_info[target_lane].feasible)
                 {
-                    set_state(ego, STATE::LC);
+                    set_state(t_, STATE::LC);
                     continue;
                 } else if (changing_lane != best_lane || meters_in_state > 500)
                 {
                     // Waiting too much or not the best: cancel
                     target_lane = ref_lane;
-                    set_state(ego, STATE::KL);
+                    set_state(t_, STATE::KL);
                     continue;
                 } else // Not feasible
                 {
@@ -555,12 +555,12 @@ namespace pp_l {
                 {
                     // Lane change completed
                     if (changing_lane >= 0 && changing_lane != ref_lane) {
-                        set_state(ego, STATE::PLC);
+                        set_state(t_, STATE::PLC);
                         continue;
                     }
 
                     changing_lane = -1;
-                    set_state(ego, STATE::KL);
+                    set_state(t_, STATE::KL);
                     continue;
                 }
 
@@ -611,7 +611,7 @@ namespace pp_l {
 
         // Adjust speed
         if (target_speed < ref_speed) {
-            // deccelerate
+            // decelerate
             target_speed = fmax(target_speed, ref_speed - accel);
         } else if (target_speed > ref_speed) {
             // accelerate
@@ -620,7 +620,7 @@ namespace pp_l {
     }
 
 
-    void PathPlanner::build_path(const pp::telemetry_data & ego,
+    void PathPlanner::build_path(const pp::telemetry_data & t_,
         const int target_lane,
         const double target_speed,
         pp::path & path, double dt)
@@ -662,8 +662,8 @@ namespace pp_l {
         // Now we can build the final trajectory...
 
         // Add previous path for continuity
-        path.x.assign(ego.previous_path.x.begin(), ego.previous_path.x.end());
-        path.y.assign(ego.previous_path.y.begin(), ego.previous_path.y.end());
+        path.x.assign(t_.previous_path.x.begin(), t_.previous_path.x.end());
+        path.y.assign(t_.previous_path.y.begin(), t_.previous_path.y.end());
 
         // distance = N * dt * speed
 

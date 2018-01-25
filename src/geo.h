@@ -29,6 +29,11 @@ namespace pp {
             return x.size();
         }
 
+        bool empty() const
+        {
+            return x.empty();
+        }
+
         void append(const pp::cpoint p_)
         {
             x.push_back(p_.x);
