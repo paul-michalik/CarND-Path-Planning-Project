@@ -173,6 +173,8 @@ namespace pp {
                 lane_env_model.begin(), lane_env_model.end(),
                 pl_.lane_info.begin(), pl_.lane_info.end(),
                 [](pp::lane_info const& l_, pp_l::lane_info_t const & r_) {
+                // lane_info::exists(l_.front) && r_.front_car != -1 &&
+                // lane_info::exists(l_.back) && r_.back_car != -1
                 return
                     l_.is_feasible() == r_.feasible &&
                     lane_info::id(l_.front) == r_.front_car &&
@@ -257,7 +259,8 @@ namespace pp {
                         });
                     }
                     
-                    if (p_.ego.s > other_s && other_gap < lane_info::gap(l.back)) {
+                    // only consider cars closer than minimal horizon...
+                    if (other_s < p_.ego.s && other_gap < other_gap < std::min(pp::c_lane_min_horizon, lane_info::gap(l.back))) {
                         // other car is behind me
                         l.back = std::make_pair(true, lane_info::car{
                             other.uid,
