@@ -45,7 +45,7 @@ namespace pp {
     };
 
     // Convert from JSON to sensor data
-    void from_json(const nlohmann::json & j, sensor_data &sensor)
+    inline void from_json(const nlohmann::json & j, sensor_data &sensor)
     {
         sensor.uid = j[0].get<int>();
         sensor.x = j[1];
@@ -57,14 +57,14 @@ namespace pp {
     }
 
     // Convert from JSON to telemetry data
-    void from_json(const nlohmann::json & j, telemetry_data &tele)
+    inline void from_json(nlohmann::json const& j, telemetry_data &tele)
     {
         tele.x = j["x"];
         tele.y = j["y"];
-        tele.yaw = deg2rad(j["yaw"]);
+        tele.yaw = udacity::deg2rad(j["yaw"]);
         tele.s = j["s"];
         tele.d = j["d"];
-        tele.speed = mph2mps(j["speed"]);
+        tele.speed = pp::mph2mps(j["speed"]);
 
         // Previous path data given to the Planner
         tele.previous_path.x = j["previous_path_x"].get<std::vector<double>>();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <spline.h>
 
 namespace pp {
     // miles/hour to meters/second
@@ -27,10 +28,11 @@ namespace pp {
         {
             return x.size();
         }
-        void append(const pp::cpoint xy)
+
+        void append(const pp::cpoint p_)
         {
-            x.push_back(xy.x);
-            y.push_back(xy.y);
+            x.push_back(p_.x);
+            y.push_back(p_.y);
         }
 
         void append(const double x_, const double y_)
@@ -40,23 +42,52 @@ namespace pp {
         }
     };
 
-    
-    inline constexpr double mph2mps(double x)
+    // interpolated curve
+    class spline_curve {
+        tk::spline _sx;
+        tk::spline _sy;
+    public:
+        void fit(
+            std::vector<double> const& s_,
+            std::vector<double> const& x_, 
+            std::vector<double> const& y_)
+        {
+            _sx.set_points(s_, x_);
+            _sy.set_points(s_, y_);
+        }
+
+        pp::cpoint get(double s_) const
+        {
+            return {_sx(s_), _sy(s_)};
+        }
+
+        double get_x(double s_) const
+        {
+            return _sx(s_);
+        }
+
+        double get_y(double s_) const
+        {
+            return _sy(s_);
+        } 
+    };
+
+    constexpr double mph2mps(double x)
     {
         return x * c_mph2mps;
     }
 
-    inline constexpr double mps2mph(double x)
+    constexpr double mps2mph(double x)
     {
         return x / c_mph2mps;
     }
 
-    inline constexpr double miles2meters(double x)
+    constexpr double miles2meters(double x)
     {
         return x * c_mile2meter;
     }
 
-    inline constexpr double meters2miles(double x)
+    constexpr double meters2miles(double x)
     {
         return x / c_mile2meter;
     }
@@ -66,6 +97,7 @@ namespace pp {
         return x1 * x2 + y1 * y2;
     }
 
+    // euclidian norm
     inline double enorm(double x, double y)
     {
         return sqrt(x * x + y * y);

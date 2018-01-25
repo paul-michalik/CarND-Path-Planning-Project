@@ -1,76 +1,8 @@
 #pragma once
 
 namespace pp_l {
-    using json = ::nlohmann::json;
     using namespace std;
-
-    // Infinity is useful
-    static constexpr double c_inf = std::numeric_limits<double>::infinity();
-
-    // miles/hour to meters/second
-    static constexpr double c_mph2mps = 0.44704;
-
-    constexpr double mph2mps(double x)
-    {
-        return x * c_mph2mps;
-    }
-    constexpr double mps2mph(double x)
-    {
-        return x / c_mph2mps;
-    }
-
-    static constexpr double c_mile2meter = 1609.34;
-
-    constexpr double miles2meters(double x)
-    {
-        return x * c_mile2meter;
-    }
-    constexpr double meters2miles(double x)
-    {
-        return x / c_mile2meter;
-    }
-
-    // dot product
-    double dot(double x1, double y1, double x2, double y2)
-    {
-        return x1 * x2 + y1 * y2;
-    }
-
-    // 2d vector norm
-    double norm(double x, double y)
-    {
-        return sqrt(x * x + y * y);
-    }
-
-    // euclidean distance
-    double distance(double x1, double y1, double x2, double y2)
-    {
-        return norm(x2 - x1, y2 - y1);
-    }
-
-    // interpolated curve
-    struct spline_curve {
-        void fit(vector<double> s, vector<double> x, vector<double> y)
-        {
-            // TODO: Check loops where s is not monotonic
-            s_x_.set_points(s, x);
-            s_y_.set_points(s, y);
-        }
-
-        double x(double s) const
-        {
-            return s_x_(s);
-        }
-
-        double y(double s) const
-        {
-            return s_y_(s);
-        }
-    private:
-        tk::spline s_x_;
-        tk::spline s_y_;
-    };
-
+   
     // waypoint
     struct waypoint_t {
         double x, y, s, dx, dy;
@@ -147,9 +79,9 @@ namespace pp_l {
     {
         int    front_car = -1;
         int    back_car = -1;
-        double front_gap = c_inf;
-        double front_speed = c_inf;
-        double back_gap = c_inf;
+        double front_gap = pp::c_inf;
+        double front_speed = pp::c_inf;
+        double back_gap = pp::c_inf;
         double back_speed = 0;
         bool   feasible = true;
 
@@ -331,7 +263,7 @@ namespace pp_l {
             ref_y_prev = *(ego.previous_path.y.end() - 2);
 
             ref_yaw = std::atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-            ref_speed = distance(ref_x_prev, ref_y_prev, ref_x, ref_y) / dt;
+            ref_speed = pp::edistance(ref_x_prev, ref_y_prev, ref_x, ref_y) / dt;
 
             ref_s = ego.end_path.s;
             ref_d = ego.end_path.d;
@@ -363,7 +295,7 @@ namespace pp_l {
                 auto & lane = lane_info[car_lane];
 
                 // predict car position assuming constant speed
-                auto car_speed = norm(car.vx, car.vy);
+                auto car_speed = pp::enorm(car.vx, car.vy);
                 // predict car position after consumption of pending plan
                 auto car_next_s = car.s + car_speed * planned_size * dt;
                 // check if it's in front or behind
@@ -373,7 +305,7 @@ namespace pp_l {
 
                 /*std::cout << "  CAR " << setw(2) << car.uid
                 << "  lane=" << car_lane
-                << "  v=" << setw(4) << mps2mph(norm(car.vx, car.vy))
+                << "  v=" << setw(4) <<pp::mps2mph(norm(car.vx, car.vy))
                 << "  s=" << setw(6) << car.s
                 << "  s'=" << setw(6) << car_next_s
                 << "  gap=" << setw(7) << (car_next_s - ref_s)
@@ -411,11 +343,11 @@ namespace pp_l {
         //                    log_ << fixed << setw(2) << setprecision(0);
         //                    log_ << l.front_gap;
         //                    if (isfinite(l.front_gap))
-        //                        log_ << "+" << mps2mph(l.front_speed) << "t";
+        //                        log_ << "+" <<pp::mps2mph(l.front_speed) << "t";
         //                    log_ << "; ";
         //                    log_ << -l.back_gap;
         //                    if (isfinite(l.back_gap))
-        //                        log_ << "+" << mps2mph(l.back_speed) << "t";
+        //                        log_ << "+" <<pp::mps2mph(l.back_speed) << "t";
         //                    log_ << "]";
         //                }
         //                log_ << endl;
@@ -438,7 +370,7 @@ namespace pp_l {
     auto pp_get_lane_speed(PathPlanner const& p_, lane_info_t l_)
     {
         return l_.front_gap > p_.lane_horizon
-            ? c_inf
+            ? pp::c_inf
             : l_.back_gap < p_.lane_change_back_buffer
             ? l_.back_speed
             : l_.front_speed;
@@ -463,7 +395,7 @@ namespace pp_l {
 
         // pick only clear lanes <2> with infinite velocities <1>
         t_lane_info.erase(std::remove_if(t_lane_info.begin(), t_lane_info.end(), [&](best_lane_info_t const& lane_) {
-            return !get<2>(lane_).is_clear() && get<1>(lane_) < c_inf;
+            return !get<2>(lane_).is_clear() && get<1>(lane_) < pp::c_inf;
         }), t_lane_info.end());
 
         // sort lanes by distance to reference lane
@@ -504,12 +436,12 @@ namespace pp_l {
 
 
             const double i_v = lane_i.front_gap > lane_horizon
-                ? c_inf
+                ? pp::c_inf
                 : lane_i.back_gap < lane_change_back_buffer
                 ? lane_i.back_speed
                 : lane_i.front_speed;
             const double j_v = lane_j.front_gap > lane_horizon
-                ? c_inf
+                ? pp::c_inf
                 : lane_j.back_gap < lane_change_back_buffer
                 ? lane_j.back_speed
                 : lane_j.front_speed;
@@ -531,7 +463,7 @@ namespace pp_l {
         //std::cout << "PLANNING" << endl;
 
         // Give it a safety margin
-        const double road_speed_limit = mph2mps(track.speed_limit_mph) - 0.2;
+        const double road_speed_limit = pp::mph2mps(track.speed_limit_mph) - 0.2;
         const double cte = (ref_d - track.lane_center(target_lane));
 
         if (state_ == STATE::START)
@@ -556,7 +488,7 @@ namespace pp_l {
                 assert(target_lane == ref_lane);
 
                 std::cout << " * KEEPING LANE " << target_lane
-                    << " FOR " << setprecision(2) << meters2miles(meters_in_state) << " Miles"
+                    << " FOR " << setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
                     << " (cte=" << setprecision(1) << setw(4) << cte << " m)"
                     << endl;
 
@@ -585,7 +517,7 @@ namespace pp_l {
                 assert(changing_lane != ref_lane);
 
                 std::cout << " * PREPARING CHANGE TO LANE " << changing_lane
-                    << " FOR " << setprecision(2) << meters2miles(meters_in_state) << " Miles"
+                    << " FOR " << setprecision(2) <<pp::meters2miles(meters_in_state) << " Miles"
                     << " (cte=" << setprecision(1) << setw(4) << cte << " m)"
                     << endl;
 
@@ -641,7 +573,7 @@ namespace pp_l {
                 }
 
                 std::cout << " * CHANGING TO LANE " << target_lane
-                    << " FOR " << setprecision(2) << meters2miles(meters_in_state) << " Miles"
+                    << " FOR " << setprecision(2) <<pp::meters2miles(meters_in_state) << " Miles"
                     << " (error=" << setprecision(1) << setw(4) << cte << " m)"
                     << endl;
 
@@ -697,7 +629,7 @@ namespace pp_l {
 
         std::cout << "TRAJECTORY" << endl
             << " * TARGET LANE " << target_lane << endl
-            << " * TARGET SPEED " << setprecision(1) << mps2mph(target_speed)
+            << " * TARGET SPEED " << setprecision(1) <<pp::mps2mph(target_speed)
             << endl;
 
         const auto target_d = track.safe_lane_center(target_lane);
@@ -738,7 +670,7 @@ namespace pp_l {
         // set a horizon of 30 m
         const double target_x = 30;
         const double target_y = spline(target_x);
-        const double target_dist = norm(target_x, target_y);
+        const double target_dist = pp::enorm(target_x, target_y);
 
         // t = N * dt = target_dist / target_speed
         // const double N = target_dist / (dt * target_speed);
