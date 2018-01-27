@@ -135,6 +135,7 @@
     <None Include="..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\constants.h" />
     <ClInclude Include="..\..\src\ppl_planner.h" />
     <ClInclude Include="..\..\src\geo.h" />
     <ClInclude Include="..\..\src\map.h" />

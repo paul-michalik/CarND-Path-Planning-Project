@@ -1,18 +1,10 @@
 #pragma once
 
+#include "constants.h"
 #include <vector>
 #include <spline.h>
 
 namespace pp {
-    // miles/hour to meters/second
-    static constexpr double c_mph2mps = 0.44704;
-
-    // Shortcut for infinity
-    static constexpr double c_inf = std::numeric_limits<double>::infinity();
-
-    // miles to meters
-    static constexpr double c_mile2meter = 1609.34;
-
     struct fpoint {
         double s, d;
     };
@@ -94,8 +86,15 @@ namespace pp {
 
     constexpr double meters2miles(double x)
     {
-        return x / c_mile2meter;
+        return x / pp::c_mile2meter;
     }
+
+    // Speed limit in m/s
+    constexpr double speed_limit_m_per_sec()
+    {
+        return pp::mph2mps(pp::c_speed_limit_mph); // [m/s]
+    }
+
 
     inline double edot(double x1, double y1, double x2, double y2)
     {

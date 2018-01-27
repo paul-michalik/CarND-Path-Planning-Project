@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.h"
 #include "map.h"
 #include "geo.h"
 #include "sensors.h"
@@ -16,37 +17,6 @@
 #include "ppl_planner.h"
 
 namespace pp {
-
-    // paths are always 50 points long
-    constexpr std::size_t c_path_point_count = 50u;
-
-    // Speed limit in mph
-    constexpr double c_speed_limit_mph = 50; // [mph]
-
-    // Speed limit in m/s
-    constexpr double c_speed_limit = pp::mph2mps(c_speed_limit_mph); // [m/s]
-
-    // Target acceleration
-    constexpr double c_acceleration = 0.2; // [m/s^2]
-
-    // Observable horizon in the lane environment model
-    constexpr double c_lane_min_horizon = 50; // [m]
-
-    // Safe distance buffer for lane changes in front of me
-    constexpr double c_lane_change_min_front_buffer = 15; // [m]
-
-    // Safe distance buffer for lane changes at the back
-    constexpr double c_lane_change_min_back_buffer = 7; // [m]
-
-    // Number of lanes in this driving direction
-    constexpr int    c_lane_count = 3;
-    
-    // Lane width in m
-    constexpr double c_lane_width = 4; // [m]
-
-    // Safe lane distance from boundary
-    constexpr double c_lane_dist_safety_margin = 0.05; // [m]
-
     // ego position with history
     struct ref_ego_position {
         ego_position ego;
@@ -107,9 +77,28 @@ namespace pp {
                 pp::c_lane_change_min_back_buffer < lane_info::gap(back));
         }
 
-        std::pair<bool, car> front = {false, car{}}, back = {false, car{}};
+        std::pair<bool, car> 
+            front = {false, car{-1, c_inf, c_inf}}, 
+            back = {false, car{-1, c_inf, 0.}};
+
+        friend std::ostream& operator<<(std::ostream& out_, lane_info const& l_)
+        {
+            return out_
+                << "f: " << std::boolalpha << lane_info::exists(l_.front)
+                << ", " << lane_info::id(l_.front)
+                << ", " << lane_info::gap(l_.front)
+                << ", " << lane_info::speed(l_.front)
+                << std::endl
+                << "b: " << std::boolalpha << lane_info::exists(l_.back)
+                << ", " << lane_info::id(l_.back)
+                << ", " << lane_info::gap(l_.back)
+                << ", " << lane_info::speed(l_.back)
+                << std::endl
+                << "feasible: " << std::boolalpha << l_.is_feasible();
+        }
     };
  
+
     // auxiliary calculations for getting the center or width of lanes
     // Based on the assumption that lane_id are integers in [0, n - 1] where
     // n is pp::c_lane_count
@@ -146,7 +135,7 @@ namespace pp {
             return std::floor(d_ / pp::c_lane_width);
         }
 
-        static double distance_to_lane(double d_, int lane_id_)
+        static double get_distance_to_lane_center_d(double d_, int lane_id_)
         {
             return get_lane_center_d(lane_id_) - d_;
         }
@@ -173,16 +162,16 @@ namespace pp {
                 lane_env_model.begin(), lane_env_model.end(),
                 pl_.lane_info.begin(), pl_.lane_info.end(),
                 [](pp::lane_info const& l_, pp_l::lane_info_t const & r_) {
-                // lane_info::exists(l_.front) && r_.front_car != -1 &&
-                // lane_info::exists(l_.back) && r_.back_car != -1
                 return
-                    l_.is_feasible() == r_.feasible &&
+                    lane_info::exists(l_.front) ? r_.front_car != -1 : r_.front_car == -1 &&
                     lane_info::id(l_.front) == r_.front_car &&
                     lane_info::gap(l_.front) == r_.front_gap &&
                     lane_info::speed(l_.front) == r_.front_speed &&
+                    lane_info::exists(l_.back) ? r_.back_car != -1 : r_.back_car == -1 &&
                     lane_info::id(l_.back) == r_.back_car &&
                     lane_info::gap(l_.back) == r_.back_gap &&
-                    lane_info::speed(l_.back) == r_.back_speed;
+                    lane_info::speed(l_.back) == r_.back_speed &&
+                    l_.is_feasible() == r_.feasible;
             });
         } else {
             return false;
@@ -195,7 +184,7 @@ namespace pp {
         mutable pp_l::PathPlanner _planner;
     public:
         // Estimate reference position based on current and past data. The estimations are from the lessons and from Q/A walk-through. 
-        static ref_ego_position get_ref_ego_position(pp::telemetry_data const& t_, double dt_) 
+        static ref_ego_position make_ref_ego_position(pp::telemetry_data const& t_, double dt_) 
         {
             ref_ego_position ref;
 
@@ -229,7 +218,7 @@ namespace pp {
         }
 
         // Predict and remember closest cars on each lane
-        static auto make_lane_env_model(
+        static auto make_lane_model(
             ref_ego_position const & p_, 
             pp::telemetry_data const& t_, 
             double dt_)
@@ -250,8 +239,9 @@ namespace pp {
                     auto other_speed = pp::enorm(other.vx, other.vy);
                     auto other_s = other.s + other_speed * pred_distance * dt_;
                     auto other_gap = std::fabs(other_s - p_.ego.s);
-                    if (p_.ego.s <= other_s && other_gap < lane_info::gap(l.front)) {
-                        // other car is in front of me
+
+                    // Is other car in front of me and closer than this one?
+                    if (p_.ego.s <= other_s && other_gap < lane_info::gap(l.front)) {                        
                         l.front = std::make_pair(true, lane_info::car{
                             other.uid,
                             other_gap,
@@ -259,9 +249,8 @@ namespace pp {
                         });
                     }
                     
-                    // only consider cars closer than minimal horizon...
-                    if (other_s < p_.ego.s && other_gap < other_gap < std::min(pp::c_lane_min_horizon, lane_info::gap(l.back))) {
-                        // other car is behind me
+                    // Is the other car behind me and closer than minimal horizon...
+                    if (other_s < p_.ego.s && other_gap < std::min(pp::c_lane_min_horizon, lane_info::gap(l.back))) {
                         l.back = std::make_pair(true, lane_info::car{
                             other.uid,
                             other_gap,
@@ -292,14 +281,14 @@ namespace pp {
             {
                 _planner.compute_reference(t_, dt_);
                 
-                auto ref_ego_pos = get_ref_ego_position(t_, dt_);
+                auto ref_ego_pos = make_ref_ego_position(t_, dt_);
                 assert(test_eq(ref_ego_pos, _planner));
 
                 _planner.track_lap(t_); 
                 _planner.process_sensor_fusion(t_, dt_);
                 
-                auto lane_env_model = planner::make_lane_env_model(ref_ego_pos, t_, dt_);
-                assert(test_eq(lane_env_model, _planner));
+                auto lane_model = planner::make_lane_model(ref_ego_pos, t_, dt_); 
+                assert(test_eq(lane_model, _planner));
 
                 _planner.create_plan(t_, dt_);
                 _planner.collision_avoidance();

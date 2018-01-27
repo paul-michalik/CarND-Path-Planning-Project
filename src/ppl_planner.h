@@ -89,6 +89,24 @@ namespace pp_l {
         {
             return feasible && front_car < 0;
         }
+
+        friend std::ostream& operator<<(std::ostream& out_, lane_info_t const& l_)
+        {
+            return out_
+                << "f: " << std::boolalpha << (l_.front_car != -1)
+                << ", " << l_.front_car
+                << ", " << l_.front_gap
+                << ", " << l_.front_speed
+                << std::endl
+                << "b: " << std::boolalpha << (l_.back_car != -1)
+                << ", " << l_.back_car
+                << ", " << l_.back_gap
+                << ", " << l_.back_speed
+                << std::endl
+                << "feasible: " << std::boolalpha << l_.feasible
+                << std::endl
+                << "clear: " << std::boolalpha << l_.is_clear();
+        }
     };
 
     // Path Planner
