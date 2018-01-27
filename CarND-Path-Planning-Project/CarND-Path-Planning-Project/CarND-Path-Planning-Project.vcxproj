@@ -153,6 +153,10 @@
     </ClCompile>
     <ClCompile Include="..\..\src\win_main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\pictures\pseudo-code.png" />
+    <Image Include="..\..\pictures\state-machine.jpg" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

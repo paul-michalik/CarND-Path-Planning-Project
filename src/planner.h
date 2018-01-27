@@ -291,6 +291,8 @@ namespace pp {
                 assert(test_eq(lane_model, _planner));
 
                 _planner.create_plan(t_, dt_);
+
+
                 _planner.collision_avoidance();
                 _planner.speed_control();
                 _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);

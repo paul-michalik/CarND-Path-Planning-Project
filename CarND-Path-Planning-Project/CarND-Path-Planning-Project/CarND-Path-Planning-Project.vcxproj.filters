@@ -59,4 +59,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\pictures\state-machine.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\..\pictures\pseudo-code.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
