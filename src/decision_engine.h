@@ -129,7 +129,7 @@ namespace pp {
                     std::cout << " - preparing lane change " << _target.changing_into_lane_id
                         << " for " << std::setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
                         << " (cte=" << std::setprecision(1) << std::setw(4) << get_cte(ref_) << " m)"
-                        << endl;
+                        << std::endl;
 
                     _target.lane_id = ref_.lane_id + ((_target.changing_into_lane_id > ref_.lane_id) ? 1 : -1);
 
@@ -139,7 +139,7 @@ namespace pp {
                     } else if (_target.changing_into_lane_id != best_lane || meters_in_state > 500) {
                         // Waiting too much or not the best: cancel
                         _target.lane_id = ref_.lane_id;
-                        switch_state(state::keeping_lane);
+                        switch_state(state::keeping_lane, ref_);
                         continue;
                     } else { // Not feasible
                         if (lane_info::gap(li_[ref_.lane_id].front) < 30) {
@@ -177,7 +177,7 @@ namespace pp {
                         // abort too dangerous...
                         _target.lane_id = ref_.lane_id;
                         _target.changing_into_lane_id = -1;
-                        std::cout << " - aborting lane change" << endl;
+                        std::cout << " - aborting lane change" << std::endl;
                     }
 
                     std::cout << " - changing to lane " << _target.lane_id
