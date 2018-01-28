@@ -33,6 +33,14 @@ namespace pp {
             return udacity::c_max_s;
         }
 
+        auto normalize_s(double s_) const
+        {
+            while (s_ < 0.) {
+                s_ += get_max_s();
+            }
+            return s_;
+        }
+
         auto get_frenet(double x_, double y_, double theta_) const
         {
             auto const& f = udacity::getFrenet(x_, y_, theta_, _map_waypoints_x, _map_waypoints_y);

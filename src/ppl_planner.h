@@ -630,7 +630,7 @@ namespace pp_l {
         // Adjust speed
         if (target_speed < ref_speed) {
             // decelerate
-            target_speed = fmax(target_speed, ref_`eed - accel);
+            target_speed = fmax(target_speed, ref_speed - accel);
         } else if (target_speed > ref_speed) {
             // accelerate
             target_speed = fmin(target_speed, ref_speed + accel);
