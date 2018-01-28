@@ -27,17 +27,15 @@ namespace pp {
         
         // trajectory driven in current state
         double _cur_state_s = 0.;
-
-        localization_info _ref;
         target_info _target;
 
-        auto cte() const
+        auto get_cte(localization_info const& ref_) const
         {
-            return _ref.ego.d - road::get_lane_center_d(_target.lane_id);
+            return ref_.ego.d - road::get_lane_center_d(_target.lane_id);
         }
 
         // estimate best lane (= discrete cost function)
-        auto get_best_lane_id(std::vector<lane_info> const& li_) const
+        auto get_best_lane_id(localization_info const& ref_, std::vector<lane_info> const& li_) const
         {
             using best_lane_info_t = std::tuple<int, double, lane_info>;
 
@@ -59,66 +57,71 @@ namespace pp {
 
             // sort lanes by distance to reference lane
             std::sort(bli.begin(), bli.end(), [&](auto const& l_, auto const& r_) {
-                return abs(get<0>(l_) - _ref.lane_id) < abs(get<0>(l_) - _ref.lane_id);
+                return abs(get<0>(l_) - ref_.lane_id) < abs(get<0>(l_) - ref_.lane_id);
             });
 
-            return !bli.empty() ? std::get<0>(bli.front()) : _ref.lane_id;
+            return !bli.empty() ? std::get<0>(bli.front()) : ref_.lane_id;
+        }
+
+        void switch_state(state new_state_, localization_info const& ref_)
+        {
+            if (_cur_state != new_state_) {
+                // Set the new state and the reference position
+                _cur_state = new_state_;
+                _cur_state_s = ref_.ego.s;
+            }
         }
     public:
         target_info make_decision(
             pp::map const& map_,
-            localization_info const& loc_, 
+            localization_info const& ref_, 
             std::vector<lane_info> const li_)
         {
-            //// Give it a safety margin
-            //const double road_speed_limit = pp::mph2mps(track.speed_limit_mph) - 0.2;
-            //const double cte = (ref_d - track.lane_center(target_lane));
+            // Give it a safety margin
+            const auto max_speed = pp::mph2mps(pp::c_speed_limit_mph) - 0.2;
 
-            //if (state_ == STATE::START)
-            //{
-            //    changing_lane = -1;
-            //    target_lane = ref_lane;
-            //    state_ = STATE::KL;
-            //    state_s_ = ego_start_position.s;
-            //}
+            if (_cur_state == state::start)
+            {
+                _target.changing_into_lane_id = -1;
+                _target.lane_id = ref_.lane_id;
+                _target.speed = 0.;
+                _cur_state = state::keeping_lane;
+                _cur_state_s = ref_.ego.s;
+            }
 
-            //int best_lane = get_best_lane();
-            //std::cout << " * BEST LANE " << best_lane << endl;
+            int best_lane = get_best_lane_id(ref_, li_);
+            std::cout << " - best lane " << best_lane << std::endl;
 
-            //while (true)
-            //{
-            //    double meters_in_state = ref_s - state_s_;
-            //    while (meters_in_state < 0)
-            //        meters_in_state += roadmap.get_max_s();
+            while (true) {
+                double meters_in_state = map_.normalize_s(ref_.ego.s - _cur_state_s);
+                
+                if (_cur_state == state::keeping_lane) {
+                    assert(_target.lane_id == ref_.lane_id);
 
-            //    if (state_ == STATE::KL)
-            //    {
-            //        assert(target_lane == ref_lane);
+                    std::cout 
+                        << " - keeping lane " << _target.lane_id
+                        << " for " << std::setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
+                        << " (cte=" << std::setprecision(1) << std::setw(4) << get_cte(ref_) << " m)"
+                        << std::endl;
 
-            //        std::cout << " * KEEPING LANE " << target_lane
-            //            << " FOR " << setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
-            //            << " (cte=" << setprecision(1) << setw(4) << cte << " m)"
-            //            << endl;
+                    _target.speed = max_speed;
 
-            //        target_speed = road_speed_limit;
+                    // Evaluate lane change
+                    _target.changing_into_lane_id = -1;
 
-            //        // Evaluate lane change
-            //        changing_lane = -1;
+                    // Evaluate lane changes if current lane is busy
+                    if (lane_info::gap(li_[_target.lane_id].front) < pp::c_lane_min_horizon
+                        && lane_info::speed(li_[_target.lane_id].front) < max_speed) {
+                        // Change if we are not in the best one
+                        if (lane_info::speed(li_[_target.lane_id].front) + 0.2 < lane_info::speed(li_[best_lane].front)) {
+                            _target.changing_into_lane_id = best_lane;
+                            switch_state(state::prepare_changing_lane, ref_);
+                            continue;
+                        }
+                    }
 
-            //        // Evaluate lane changes if current lane is busy
-            //        if (lane_info[target_lane].front_gap < lane_horizon
-            //            && lane_info[target_lane].front_speed < road_speed_limit)
-            //        {
-            //            // Change if we are not in the best one
-            //            if (lane_info[best_lane].front_speed > lane_info[target_lane].front_speed + 0.2) {
-            //                changing_lane = best_lane;
-            //                set_state(t_, STATE::PLC);
-            //                continue;
-            //            }
-            //        }
-
-            //        break;
-            //    }
+                    break;
+                }
 
             //    else if (state_ == STATE::PLC)
             //    {
@@ -190,7 +193,7 @@ namespace pp {
             //    }
 
             //    break;
-            //}
+            }
 
             //// Ensure the target speed is inside the limits
             //// NOTE that we don't consider the possibility of moving backwards.
