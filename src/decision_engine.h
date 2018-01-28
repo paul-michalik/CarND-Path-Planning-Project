@@ -72,13 +72,13 @@ namespace pp {
             }
         }
     public:
-        target_info make_decision(
+        target_info get_targets(
             pp::map const& map_,
             localization_info const& ref_, 
             std::vector<lane_info> const li_)
         {
             // Give it a safety margin
-            const auto max_speed = pp::mph2mps(pp::c_speed_limit_mph) - 0.2;
+            const auto c_max_speed = pp::mph2mps(pp::c_speed_limit_mph) - 0.2;
 
             if (_cur_state == state::start)
             {
@@ -104,14 +104,14 @@ namespace pp {
                         << " (cte=" << std::setprecision(1) << std::setw(4) << get_cte(ref_) << " m)"
                         << std::endl;
 
-                    _target.speed = max_speed;
+                    _target.speed = c_max_speed;
 
                     // Evaluate lane change
                     _target.changing_into_lane_id = -1;
 
                     // Evaluate lane changes if current lane is busy
-                    if (lane_info::gap(li_[_target.lane_id].front) < pp::c_lane_min_horizon
-                        && lane_info::speed(li_[_target.lane_id].front) < max_speed) {
+                    if (lane_info::gap(li_[_target.lane_id].front) < pp::c_lane_min_horizon && 
+                        lane_info::speed(li_[_target.lane_id].front) < c_max_speed) {
                         // Change if we are not in the best one
                         if (lane_info::speed(li_[_target.lane_id].front) + 0.2 < lane_info::speed(li_[best_lane].front)) {
                             _target.changing_into_lane_id = best_lane;
@@ -123,81 +123,77 @@ namespace pp {
                     break;
                 }
 
-            //    else if (state_ == STATE::PLC)
-            //    {
-            //        assert(changing_lane != ref_lane);
+                else if (_cur_state == state::prepare_changing_lane) {
+                    assert(_target.changing_into_lane_id != ref_.lane_id);
 
-            //        std::cout << " * PREPARING CHANGE TO LANE " << changing_lane
-            //            << " FOR " << setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
-            //            << " (cte=" << setprecision(1) << setw(4) << cte << " m)"
-            //            << endl;
+                    std::cout << " - preparing lane change " << _target.changing_into_lane_id
+                        << " for " << std::setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
+                        << " (cte=" << std::setprecision(1) << std::setw(4) << get_cte(ref_) << " m)"
+                        << endl;
 
-            //        target_lane = ref_lane + ((changing_lane > ref_lane) ? 1 : -1);
+                    _target.lane_id = ref_.lane_id + ((_target.changing_into_lane_id > ref_.lane_id) ? 1 : -1);
 
-            //        if (lane_info[target_lane].feasible)
-            //        {
-            //            set_state(t_, STATE::LC);
-            //            continue;
-            //        } else if (changing_lane != best_lane || meters_in_state > 500)
-            //        {
-            //            // Waiting too much or not the best: cancel
-            //            target_lane = ref_lane;
-            //            set_state(t_, STATE::KL);
-            //            continue;
-            //        } else // Not feasible
-            //        {
-            //            if (lane_info[ref_lane].front_gap < 30) {
-            //                // Can't perform the change ... try to slow down here
-            //                if (lane_info[target_lane].back_gap < lane_change_back_buffer)
-            //                    target_speed = fmin(target_speed, lane_info[target_lane].back_speed - 0.5);
-            //                else
-            //                    target_speed = fmin(target_speed, lane_info[target_lane].front_speed - 0.5);
-            //            }
-            //            // But wait in this lane
-            //            target_lane = ref_lane;
-            //        }
+                    if (li_[_target.lane_id].is_feasible()) {
+                        switch_state(state::changing_lane, ref_);
+                        continue;
+                    } else if (_target.changing_into_lane_id != best_lane || meters_in_state > 500) {
+                        // Waiting too much or not the best: cancel
+                        _target.lane_id = ref_.lane_id;
+                        switch_state(state::keeping_lane);
+                        continue;
+                    } else { // Not feasible
+                        if (lane_info::gap(li_[ref_.lane_id].front) < 30) {
+                            // Can't perform change, try slow down:
+                            if (lane_info::gap(li_[_target.lane_id].back) < pp::c_lane_change_min_back_buffer)
+                                _target.speed = 
+                                std::min(_target.speed, lane_info::speed(li_[_target.lane_id].back) - 0.5);
+                            else
+                                _target.speed = 
+                                std::min(_target.speed, lane_info::speed(li_[_target.lane_id].front) - 0.5);
+                        }
+                        // But wait in this lane
+                        _target.lane_id = ref_.lane_id;
+                    }
 
-            //        break;
-            //    }
+                    break;
+                }
 
-            //    else if (state_ == STATE::LC)
-            //    {
-            //        if (ref_lane == target_lane && fabs(cte) < 0.2 && meters_in_state > 100)
-            //        {
-            //            // Lane change completed
-            //            if (changing_lane >= 0 && changing_lane != ref_lane) {
-            //                set_state(t_, STATE::PLC);
-            //                continue;
-            //            }
+                else if (_cur_state == state::changing_lane) {
+                    if (ref_.lane_id == _target.lane_id && 
+                        std::fabs(get_cte(ref_)) < 0.2 && 
+                        meters_in_state > 100) {
+                        // Lane change completed
+                        if (_target.changing_into_lane_id >= 0 && _target.changing_into_lane_id != ref_.lane_id) {
+                            switch_state(state::prepare_changing_lane, ref_);
+                            continue;
+                        }
 
-            //            changing_lane = -1;
-            //            set_state(t_, STATE::KL);
-            //            continue;
-            //        }
+                        _target.changing_into_lane_id = -1;
+                        switch_state(state::keeping_lane, ref_);
+                        continue;
+                    }
 
-            //        if (fmin(lane_info[target_lane].front_gap, lane_info[target_lane].back_gap) < 5)
-            //        {
-            //            // ABORT
-            //            target_lane = ref_lane;
-            //            changing_lane = -1;
-            //            std::cout << " * ABORTING LANE CHANGE" << endl;
-            //        }
+                    if (std::fmin(lane_info::gap(li_[_target.lane_id].front), lane_info::gap(li_[_target.lane_id].back)) < 5.) {
+                        // abort too dangerous...
+                        _target.lane_id = ref_.lane_id;
+                        _target.changing_into_lane_id = -1;
+                        std::cout << " - aborting lane change" << endl;
+                    }
 
-            //        std::cout << " * CHANGING TO LANE " << target_lane
-            //            << " FOR " << setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
-            //            << " (error=" << setprecision(1) << setw(4) << cte << " m)"
-            //            << endl;
+                    std::cout << " - changing to lane " << _target.lane_id
+                        << " for " << std::setprecision(2) << pp::meters2miles(meters_in_state) << " Miles"
+                        << " (error=" << std::setprecision(1) << std::setw(4) << get_cte(ref_) << " m)"
+                        << std::endl;
 
-            //        target_speed = road_speed_limit;
-            //        break;
-            //    }
+                    _target.speed = c_max_speed;
+                    break;
+                }
 
-            //    break;
+                break;
             }
 
-            //// Ensure the target speed is inside the limits
-            //// NOTE that we don't consider the possibility of moving backwards.
-            //target_speed = fmax(0.0, fmin(road_speed_limit, target_speed));
+            // Clamp speed:
+            _target.speed = std::max(0., std::min(c_max_speed, _target.speed));
         
             return _target;
         }
