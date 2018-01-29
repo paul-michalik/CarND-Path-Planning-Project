@@ -112,4 +112,11 @@ namespace pp {
     {
         return enorm(x2 - x1, y2 - y1);
     }
+
+    template<class T>
+    inline T round(T const& v_, int prec_)
+    {
+        auto const base = static_cast<std::int64_t>(std::pow(10, prec_));
+        return std::round(v_ * base) / base;
+    }
 }

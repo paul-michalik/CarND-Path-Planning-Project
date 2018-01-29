@@ -25,11 +25,15 @@ namespace pp {
     namespace tests {
         inline bool test_eq(std::pair<std::vector<double>, std::vector<double>> const& l_, pp::path const& r_)
         {
+            static const auto pred = [](auto const& l_, auto const&  r_) {
+                return pp::round(l_, 2) == pp::round(r_, 2);
+            };
+
             return
                 l_.first.size() == r_.x.size() &&
                 l_.second.size() == r_.y.size() &&
-                std::equal(l_.first.begin(), l_.first.end(), r_.x.begin(), r_.x.end()) &&
-                std::equal(l_.second.begin(), l_.second.end(), r_.y.begin(), r_.y.end());
+                std::equal(l_.first.begin(), l_.first.end(), r_.x.begin(), r_.x.end(), pred)  &&
+                std::equal(l_.second.begin(), l_.second.end(), r_.y.begin(), r_.y.end(), pred);
         }
     }
 
@@ -54,8 +58,8 @@ namespace pp {
                     _target.speed = std::min(_target.speed, lane_info::speed(li_[_target.lane_id].front));
 
                 std::cout
-                    << " - reducing target speed to " << pp::mps2mph(_target.speed) << " mph "
-                    << "in order to keep safety gap to lead of "
+                    << " - reducing target speed to " << pp::mps2mph(_target.speed) << " mph " << std::endl
+                    << " - to keep safety gap of "
                     << lane_info::gap(li_[_target.lane_id].front) << " m"
                     << std::endl;
             }
@@ -176,15 +180,15 @@ namespace pp {
                 _planner.collision_avoidance();
                
                 avoid_collision(lane_model);
-                assert(_target.speed == _planner.target_speed);
+                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
 
                 _planner.speed_control();
                 adjust_speed(loc);
-                assert(_target.speed == _planner.target_speed);
+                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
 
                 _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
                 auto trajectory = make_trajectory(_map, loc, t_, dt_);
-                assert(tests::test_eq(trajectory, path));
+                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
             }
 
             return std::make_pair(path.x, path.y);

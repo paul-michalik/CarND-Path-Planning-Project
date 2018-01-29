@@ -226,9 +226,9 @@ namespace pp {
         inline bool test_eq(decision_engine const& engine_, pp_l::PathPlanner const& pl_)
         {
             return test_eq(engine_.get_current().state, pl_.state_) &&
-                engine_.get_current().s == pl_.state_s_ &&
+                pp::round(engine_.get_current().s, 2) == pp::round(pl_.state_s_, 2) &&
                 engine_.get_target().lane_id == pl_.target_lane &&
-                engine_.get_target().speed == pl_.target_speed &&
+                pp::round(engine_.get_target().speed, 2) == pp::round(pl_.target_speed, 2) &&
                 engine_.get_target().changing_into_lane_id == pl_.changing_lane;
         }
     }
