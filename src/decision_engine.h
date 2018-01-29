@@ -94,6 +94,8 @@ namespace pp {
             localization_info const& ref_, 
             std::vector<lane_info> const li_)
         {
+            std::cout << "next decision" << std::endl;
+
             // Give it a safety margin
             const auto c_max_speed = pp::mph2mps(pp::c_speed_limit_mph) - pp::c_acceleration;
 

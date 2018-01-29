@@ -153,10 +153,7 @@ namespace pp {
 
         auto get_next_vals(pp::telemetry_data const& t_, double dt_)
         {
-            //std::cout
-            //    << __FUNCTION__ << std::endl
-            //    << "Time difference: " << dt_ << std::endl;
-            
+#ifdef CARND_USE_PPL   
             pp::path path;
             {
                 _planner.compute_reference(t_, dt_);
@@ -192,6 +189,21 @@ namespace pp {
             }
 
             return std::make_pair(path.x, path.y);
+#else
+            auto loc = pp::localize(t_, dt_);
+
+            auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_);
+
+            _engine.next_target(_map, loc, lane_model);
+            _current = _engine.get_current();
+            _target = _engine.get_target();
+
+            avoid_collision(lane_model);
+
+            adjust_speed(loc);
+
+            return make_trajectory(_map, loc, t_, dt_);
+#endif
         }
     };
 }
