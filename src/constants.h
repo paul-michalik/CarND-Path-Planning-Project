@@ -20,7 +20,7 @@ namespace pp {
     constexpr double c_speed_limit_mph = 50; // [mph]
 
     // Target acceleration
-    constexpr double c_acceleration = 0.2; // [m/s^2]
+    constexpr double c_acceleration = 0.16; // [m/s^2]
 
     // Observable horizon in the lane environment model
     constexpr double c_lane_min_horizon = 50; // [m]
