@@ -194,6 +194,12 @@ namespace pp {
             // Clamp speed:
             _target.speed = std::max(0., std::min(c_max_speed, _target.speed));
         
+            std::cout 
+                << " - changing lane " << _target.changing_into_lane_id << std::endl
+                << " - target lane   " << _target.lane_id << std::endl
+                << " - target speed  " << std::setprecision(2) << std::fixed
+                << pp::mps2mph(_target.speed) << std::endl;
+
             return _target;
         }
     };
