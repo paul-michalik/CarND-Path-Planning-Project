@@ -9,25 +9,33 @@
 #include "ppl_planner.h"
 
 namespace pp {
-    struct target_info {
-        int lane_id = 1;
-        double speed = 0.; 
-        int changing_into_lane_id = -1;
+
+    enum class engine_states : int {
+        start = 0,
+        keeping_lane,
+        prepare_changing_lane,
+        changing_lane
     };
 
-    struct decision_engine {
-        enum class state : int {
-            start = 0,
-            keeping_lane,
-            prepare_changing_lane,
-            changing_lane
-        };
+    struct current_vals {
+        // current state
+        engine_states state;
 
-        state _cur_state = state::start;
-        
         // trajectory driven in current state
-        double _cur_state_s = 0.;
-        target_info _target;
+        double s;
+    };
+
+    struct target_vals {
+        int lane_id = 1;
+        double speed = 0.; 
+        int changing_into_lane_id = -1; 
+    };
+
+    class decision_engine {
+        // current state:
+        current_vals _current = {engine_states::start, 0.}; 
+        // targets in current state
+        target_vals _target;
 
         auto get_cte(localization_info const& ref_) const
         {
@@ -62,16 +70,21 @@ namespace pp {
             return !bli.empty() ? std::get<0>(bli.front()) : ref_.lane_id;
         }
 
-        void switch_state(state new_state_, localization_info const& ref_)
+        void switch_state(engine_states new_state_, localization_info const& ref_)
         {
-            if (_cur_state != new_state_) {
+            if (_current.state != new_state_) {
                 // Set the new state and the reference position
-                _cur_state = new_state_;
-                _cur_state_s = ref_.ego.s;
+                _current.state = new_state_;
+                _current.s = ref_.ego.s;
             }
         }
     public:
-        target_info const& get_target() const
+        current_vals const& get_current() const
+        {
+            return _current;
+        }
+
+        target_vals const& get_target() const
         {
             return _target;
         }
@@ -84,22 +97,22 @@ namespace pp {
             // Give it a safety margin
             const auto c_max_speed = pp::mph2mps(pp::c_speed_limit_mph) - 0.2;
 
-            if (_cur_state == state::start)
+            if (_current.state == engine_states::start)
             {
                 _target.changing_into_lane_id = -1;
                 _target.lane_id = ref_.lane_id;
                 _target.speed = 0.;
-                _cur_state = state::keeping_lane;
-                _cur_state_s = ref_.ego.s;
+                _current.state = engine_states::keeping_lane;
+                _current.s = ref_.ego.s;
             }
 
             int best_lane = get_best_lane_id(ref_, li_);
             std::cout << " - best lane " << best_lane << std::endl;
 
             while (true) {
-                double meters_in_state = map_.normalize_s(ref_.ego.s - _cur_state_s);
+                double meters_in_state = map_.normalize_s(ref_.ego.s - _current.s);
                 
-                if (_cur_state == state::keeping_lane) {
+                if (_current.state == engine_states::keeping_lane) {
                     assert(_target.lane_id == ref_.lane_id);
 
                     std::cout 
@@ -119,13 +132,13 @@ namespace pp {
                         // Change if we are not in the best one
                         if (lane_info::speed(li_[_target.lane_id].front) + 0.2 < lane_info::speed(li_[best_lane].front)) {
                             _target.changing_into_lane_id = best_lane;
-                            switch_state(state::prepare_changing_lane, ref_);
+                            switch_state(engine_states::prepare_changing_lane, ref_);
                             continue;
                         }
                     }
 
                     break;
-                } else if (_cur_state == state::prepare_changing_lane) {
+                } else if (_current.state == engine_states::prepare_changing_lane) {
                     assert(_target.changing_into_lane_id != ref_.lane_id);
 
                     std::cout << " - preparing lane change " << _target.changing_into_lane_id
@@ -136,12 +149,12 @@ namespace pp {
                     _target.lane_id = ref_.lane_id + ((_target.changing_into_lane_id > ref_.lane_id) ? 1 : -1);
 
                     if (li_[_target.lane_id].is_feasible()) {
-                        switch_state(state::changing_lane, ref_);
+                        switch_state(engine_states::changing_lane, ref_);
                         continue;
                     } else if (_target.changing_into_lane_id != best_lane || meters_in_state > 500) {
                         // Waiting too much or not the best: cancel
                         _target.lane_id = ref_.lane_id;
-                        switch_state(state::keeping_lane, ref_);
+                        switch_state(engine_states::keeping_lane, ref_);
                         continue;
                     } else { // Not feasible
                         if (lane_info::gap(li_[ref_.lane_id].front) < 30) {
@@ -158,18 +171,18 @@ namespace pp {
                     }
 
                     break;
-                } else if (_cur_state == state::changing_lane) {
+                } else if (_current.state == engine_states::changing_lane) {
                     if (ref_.lane_id == _target.lane_id && 
                         std::fabs(get_cte(ref_)) < 0.2 && 
                         meters_in_state > 100) {
                         // Lane change completed
                         if (_target.changing_into_lane_id >= 0 && _target.changing_into_lane_id != ref_.lane_id) {
-                            switch_state(state::prepare_changing_lane, ref_);
+                            switch_state(engine_states::prepare_changing_lane, ref_);
                             continue;
                         }
 
                         _target.changing_into_lane_id = -1;
-                        switch_state(state::keeping_lane, ref_);
+                        switch_state(engine_states::keeping_lane, ref_);
                         continue;
                     }
 
@@ -204,18 +217,19 @@ namespace pp {
     };
 
     namespace tests {
-        inline bool test_eq(decision_engine::state const& l_, pp_l::PathPlanner::STATE const& r_)
+
+        inline bool test_eq(engine_states const& l_, pp_l::PathPlanner::STATE const& r_)
         {
             return static_cast<int>(l_) == static_cast<int>(r_);
         }
 
         inline bool test_eq(decision_engine const& engine_, pp_l::PathPlanner const& pl_)
         {
-            return test_eq(engine_._cur_state, pl_.state_) &&
-                engine_._cur_state_s == pl_.state_s_ &&
-                engine_._target.lane_id == pl_.target_lane &&
-                engine_._target.speed == pl_.target_speed &&
-                engine_._target.changing_into_lane_id == pl_.changing_lane;
+            return test_eq(engine_.get_current().state, pl_.state_) &&
+                engine_.get_current().s == pl_.state_s_ &&
+                engine_.get_target().lane_id == pl_.target_lane &&
+                engine_.get_target().speed == pl_.target_speed &&
+                engine_.get_target().changing_into_lane_id == pl_.changing_lane;
         }
     }
 }
