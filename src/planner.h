@@ -32,55 +32,6 @@ namespace pp {
 
         current_vals _current;
         target_vals _target;
-    public:
-        planner(pp::map map_)
-            : _map(map_)
-        {
-            _planner.initialize(_map);
-            _planner.reset();
-        }
-
-        auto get_next_vals(pp::telemetry_data const& t_, double dt_)
-        {
-            //std::cout
-            //    << __FUNCTION__ << std::endl
-            //    << "Time difference: " << dt_ << std::endl;
-            
-            pp::path path;
-            {
-                _planner.compute_reference(t_, dt_);
-                
-                auto loc = pp::localize(t_, dt_);
-                assert(tests::test_eq(loc, _planner));
-
-                _planner.track_lap(t_); 
-                _planner.process_sensor_fusion(t_, dt_);
-               
-                auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_); 
-                assert(tests::test_eq(lane_model, _planner));
-
-                _planner.create_plan(t_, dt_);
-
-                _engine.next_target(_map, loc, lane_model);
-                _current = _engine.get_current();
-                _target = _engine.get_target();
-                assert(tests::test_eq(_engine, _planner));
-
-                _planner.collision_avoidance();
-               
-                avoid_collision(lane_model);
-                assert(_target.speed == _planner.target_speed);
-
-                _planner.speed_control();
-                adjust_speed(loc);
-                assert(_target.speed == _planner.target_speed);
-
-                _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
-
-            }
-
-            return std::make_pair(path.x, path.y);
-        }
 
         // Modify speed to reduce chance for collision
         void avoid_collision(std::vector<lane_info> const& li_)
@@ -177,5 +128,55 @@ namespace pp {
 
             return std::make_pair(std::move(path.x), std::move(path.y));
         }
+    public:
+        planner(pp::map map_)
+            : _map(map_)
+        {
+            _planner.initialize(_map);
+            _planner.reset();
+        }
+
+        auto get_next_vals(pp::telemetry_data const& t_, double dt_)
+        {
+            //std::cout
+            //    << __FUNCTION__ << std::endl
+            //    << "Time difference: " << dt_ << std::endl;
+            
+            pp::path path;
+            {
+                _planner.compute_reference(t_, dt_);
+                
+                auto loc = pp::localize(t_, dt_);
+                assert(tests::test_eq(loc, _planner));
+
+                _planner.track_lap(t_); 
+                _planner.process_sensor_fusion(t_, dt_);
+               
+                auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_); 
+                assert(tests::test_eq(lane_model, _planner));
+
+                _planner.create_plan(t_, dt_);
+
+                _engine.next_target(_map, loc, lane_model);
+                _current = _engine.get_current();
+                _target = _engine.get_target();
+                assert(tests::test_eq(_engine, _planner));
+
+                _planner.collision_avoidance();
+               
+                avoid_collision(lane_model);
+                assert(_target.speed == _planner.target_speed);
+
+                _planner.speed_control();
+                adjust_speed(loc);
+                assert(_target.speed == _planner.target_speed);
+
+                _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
+
+            }
+
+            return std::make_pair(path.x, path.y);
+        }
+
     };
 }
