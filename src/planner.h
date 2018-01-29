@@ -188,7 +188,7 @@ namespace pp {
 
                 _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
                 auto trajectory = make_trajectory(_map, loc, t_, dt_);
-                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
+                assert(tests::test_eq(trajectory, path));
             }
 
             return std::make_pair(path.x, path.y);

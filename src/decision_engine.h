@@ -174,7 +174,7 @@ namespace pp {
                 } else if (_current.state == engine_states::changing_lane) {
                     if (ref_.lane_id == _target.lane_id && 
                         std::fabs(get_cte(ref_)) < 0.2 && 
-                        meters_in_state > 100) {
+                        100 < meters_in_state) {
                         // Lane change completed
                         if (_target.changing_into_lane_id >= 0 && _target.changing_into_lane_id != ref_.lane_id) {
                             switch_state(engine_states::prepare_changing_lane, ref_);
