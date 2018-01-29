@@ -120,9 +120,7 @@ namespace pp {
                     }
 
                     break;
-                }
-
-                else if (_cur_state == state::prepare_changing_lane) {
+                } else if (_cur_state == state::prepare_changing_lane) {
                     assert(_target.changing_into_lane_id != ref_.lane_id);
 
                     std::cout << " - preparing lane change " << _target.changing_into_lane_id
@@ -155,9 +153,7 @@ namespace pp {
                     }
 
                     break;
-                }
-
-                else if (_cur_state == state::changing_lane) {
+                } else if (_cur_state == state::changing_lane) {
                     if (ref_.lane_id == _target.lane_id && 
                         std::fabs(get_cte(ref_)) < 0.2 && 
                         meters_in_state > 100) {
