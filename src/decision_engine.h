@@ -16,8 +16,8 @@ namespace pp {
     };
 
     struct decision_engine {
-        enum class state {
-            start,
+        enum class state : int {
+            start = 0,
             keeping_lane,
             prepare_changing_lane,
             changing_lane
@@ -51,8 +51,7 @@ namespace pp {
             bli.erase(std::remove_if(bli.begin(), bli.end(), 
                 [&](best_lane_info_t const& li_) {
                 return
-                    !std::get<2>(li_).is_feasible() &&
-                    std::get<1>(li_) < pp::c_inf;
+                    !std::get<2>(li_).is_clear() && std::get<1>(li_) < pp::c_inf;
             }), bli.end());
 
             // sort lanes by distance to reference lane
@@ -202,11 +201,7 @@ namespace pp {
     namespace tests {
         inline bool test_eq(decision_engine::state const& l_, pp_l::PathPlanner::STATE const& r_)
         {
-            return
-                l_ == decision_engine::state::changing_lane && r_ == pp_l::PathPlanner::STATE::LC ||
-                l_ == decision_engine::state::keeping_lane && r_ == pp_l::PathPlanner::STATE::KL ||
-                l_ == decision_engine::state::prepare_changing_lane && r_ == pp_l::PathPlanner::STATE::PLC ||
-                l_ == decision_engine::state::start && r_ == pp_l::PathPlanner::STATE::START;
+            return static_cast<int>(l_) == static_cast<int>(r_);
         }
 
         inline bool test_eq(decision_engine const& engine_, pp_l::PathPlanner const& pl_)

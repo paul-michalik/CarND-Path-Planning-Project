@@ -56,9 +56,15 @@ namespace pp {
                 pp::c_lane_change_min_back_buffer < lane_info::gap(back));
         }
 
+        bool is_clear() const
+        {
+            return is_feasible() && !exists(front);
+        }
+
         auto get_lane_speed() const
         {
-            return pp::c_lane_min_horizon < gap(front) ? pp::c_inf
+            return pp::c_lane_min_horizon < gap(front) 
+                ? pp::c_inf
                 : gap(back) < pp::c_lane_change_min_back_buffer
                 ? speed(back)
                 : speed(front);

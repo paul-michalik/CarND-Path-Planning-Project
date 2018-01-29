@@ -149,8 +149,8 @@ namespace pp_l {
         // target speed for next path
         double    target_speed = 0;
 
-        enum class STATE {
-            START, KL, PLC, LC
+        enum class STATE : int {
+            START = 0, KL, PLC, LC
         };
         STATE     state_ = STATE::KL;
         double    state_s_;
