@@ -71,7 +71,7 @@ namespace pp {
             }
         }
     public:
-        target_info get_targets(
+        target_info next_target(
             pp::map const& map_,
             localization_info const& ref_, 
             std::vector<lane_info> const li_)
