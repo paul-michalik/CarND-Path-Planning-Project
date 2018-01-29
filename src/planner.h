@@ -22,6 +22,17 @@
 
 namespace pp {
 
+    namespace tests {
+        inline bool test_eq(std::pair<std::vector<double>, std::vector<double>> const& l_, pp::path const& r_)
+        {
+            return
+                l_.first.size() == r_.x.size() &&
+                l_.second.size() == r_.y.size() &&
+                std::equal(l_.first.begin(), l_.first.end(), r_.x.begin(), r_.x.end()) &&
+                std::equal(l_.second.begin(), l_.second.end(), r_.y.begin(), r_.y.end());
+        }
+    }
+
     class planner {
         pp::map _map;
         
@@ -172,11 +183,11 @@ namespace pp {
                 assert(_target.speed == _planner.target_speed);
 
                 _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
-
+                auto trajectory = make_trajectory(_map, loc, t_, dt_);
+                assert(tests::test_eq(trajectory, path));
             }
 
             return std::make_pair(path.x, path.y);
         }
-
     };
 }
