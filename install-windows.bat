@@ -30,10 +30,21 @@ if not exist "%VcPkgDir%" (
     call "%VcPkgDir%\bootstrap-vcpkg.bat"
 ) else (
     echo vcpkg found at %VcPkgDir%...
+
+    rem
+    rem Check whether we have a difference in the toolsrc folder. If non empty, %errorlevel% should be 0  
+    rem git diff --name-only origin/HEAD remotes/origin/HEAD | find "toolsrc/" > NUL & echo %errorlevel%
+    rem Put this to local function or better script...
+    rem
+
     pushd "%VcPkgDir%"
     git pull --all --prune
-    call "%VcPkgDir%\bootstrap-vcpkg.bat"
-    popd 
+    popd
+
+    rem
+    rem only invoke when changes to "toolsrc/" were made
+    rem 
+    rem call "%VcPkgDir%\bootstrap-vcpkg.bat"
 )
 
 if not exist "%VcPkgDir%" echo vcpkg path is not set correctly, bailing out & exit /b 1
@@ -43,12 +54,10 @@ if not exist "%VcPkgPath%" echo vcpkg path is not set correctly, bailing out & e
 echo. & echo Bootstrapping dependencies for triplet: %VcPkgTriplet% & echo.
 
 rem ==============================
-rem Update and Install packages.
+rem Upgrade and Install packages.
 rem ==============================
-call "%VcPkgPath%" update
-call "%VcPkgPath%" remove --outdated --recurse
+call "%VcPkgPath%" upgrade --no-dry-run --triplet %VcPkgTriplet%
 call "%VcPkgPath%" install uwebsockets --triplet %VcPkgTriplet%
-call "%VcPkgPath%" integrate project --triplet %VcPkgTriplet%
 
 set "VcPkgTripletDir=%VcPkgDir%\installed\%VcPkgTriplet%"
 
