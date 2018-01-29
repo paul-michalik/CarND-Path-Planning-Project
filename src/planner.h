@@ -58,7 +58,7 @@ namespace pp {
 
                 _planner.create_plan(t_, dt_);
 
-                auto nxt = _engine.next_target(_map, loc, lane_model);
+                _engine.next_target(_map, loc, lane_model);
                 assert(tests::test_eq(_engine, _planner));
 
                 _planner.collision_avoidance();

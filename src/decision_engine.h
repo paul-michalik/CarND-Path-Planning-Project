@@ -71,7 +71,12 @@ namespace pp {
             }
         }
     public:
-        target_info next_target(
+        target_info const& get_target() const
+        {
+            return _target;
+        }
+
+        void next_target(
             pp::map const& map_,
             localization_info const& ref_, 
             std::vector<lane_info> const li_)
@@ -195,8 +200,6 @@ namespace pp {
                 << " - target lane   " << _target.lane_id << std::endl
                 << " - target speed  " << std::setprecision(2) << std::fixed
                 << pp::mps2mph(_target.speed) << std::endl;
-
-            return _target;
         }
     };
 
