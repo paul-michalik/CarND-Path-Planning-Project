@@ -95,7 +95,7 @@ namespace pp {
             std::vector<lane_info> const li_)
         {
             // Give it a safety margin
-            const auto c_max_speed = pp::mph2mps(pp::c_speed_limit_mph) - 0.2;
+            const auto c_max_speed = pp::mph2mps(pp::c_speed_limit_mph) - pp::c_acceleration;
 
             if (_current.state == engine_states::start)
             {
@@ -130,7 +130,7 @@ namespace pp {
                     if (lane_info::gap(li_[_target.lane_id].front) < pp::c_lane_min_horizon && 
                         lane_info::speed(li_[_target.lane_id].front) < c_max_speed) {
                         // Change if we are not in the best one
-                        if (lane_info::speed(li_[_target.lane_id].front) + 0.2 < lane_info::speed(li_[best_lane].front)) {
+                        if (lane_info::speed(li_[_target.lane_id].front) + pp::c_acceleration < lane_info::speed(li_[best_lane].front)) {
                             _target.changing_into_lane_id = best_lane;
                             switch_state(engine_states::prepare_changing_lane, ref_);
                             continue;
