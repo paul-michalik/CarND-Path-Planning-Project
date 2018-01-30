@@ -2,7 +2,7 @@ project(Path_Planning)
 
 cmake_minimum_required (VERSION 3.5)
 
-add_definitions(-std=c++11)
+add_definitions(-std=c++14)
 
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
@@ -22,5 +22,6 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 
 add_executable(path_planning ${sources})
+target_include_directories(path_planning PUBLIC src)
 
 target_link_libraries(path_planning z ssl uv uWS)

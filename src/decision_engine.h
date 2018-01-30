@@ -62,7 +62,7 @@ namespace pp {
 
             // sort lanes by distance to reference lane
             std::sort(bli.begin(), bli.end(), [&](auto const& l_, auto const& r_) {
-                return abs(get<0>(l_) - ref_.lane_id) < abs(get<0>(l_) - ref_.lane_id);
+                return abs(std::get<0>(l_) - ref_.lane_id) < abs(std::get<0>(l_) - ref_.lane_id);
             });
 
             return !bli.empty() ? std::get<0>(bli.front()) : ref_.lane_id;
