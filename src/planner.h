@@ -133,6 +133,8 @@ namespace pp {
 
         auto get_next_vals(pp::telemetry_data const& t_, double dt_)
         {
+            std::cout << " - dt = " << std::setprecision(2) << dt_ << std::endl;
+
             auto loc = pp::localize(t_, dt_);
 
             auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_);

@@ -256,6 +256,7 @@ int main()
                             std::chrono::high_resolution_clock::now();
                         auto diff_time = 
                             std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time);
+                        // no way to use real timings, the motions model is too bad for that
                         auto next_vals = planner.get_next_vals(t, 0.02/*diff_time.count()/1000.*/);
                         prev_time = curr_time;
 
