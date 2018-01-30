@@ -252,23 +252,6 @@ int main()
                         pp::telemetry_data t;
                         pp::from_json(j[1], t);
 
-                        //double car_x = j[1]["x"];
-                        //double car_y = j[1]["y"];
-                        //double car_s = j[1]["s"];
-                        //double car_d = j[1]["d"];
-                        //double car_yaw = j[1]["yaw"];
-                        //double car_speed = j[1]["speed"];
-
-                        //// Previous path data given to the Planner
-                        //auto previous_path_x = j[1]["previous_path_x"];
-                        //auto previous_path_y = j[1]["previous_path_y"];
-                        //// Previous path's end s and d values 
-                        //double end_path_s = j[1]["end_path_s"];
-                        //double end_path_d = j[1]["end_path_d"];
-
-                        //// Sensor Fusion Data, a list of all other cars on the same side of the road.
-                        //auto sensor_fusion = j[1]["sensor_fusion"];
-
                         auto curr_time = 
                             std::chrono::high_resolution_clock::now();
                         auto diff_time = 
@@ -277,13 +260,10 @@ int main()
                         prev_time = curr_time;
 
                         // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-                        //json msgJson{
-                        //    {"next_x", next_vals.first},
-                        //    {"next_y", next_vals.second}
-                        //};
-                        json msgJson;
-                        msgJson["next_x"] = next_vals.first;
-                        msgJson["next_y"] = next_vals.second;
+                        json msgJson{
+                            {"next_x", next_vals.first},
+                            {"next_y", next_vals.second}
+                        };
 
                         auto msg = "42[\"control\"," + msgJson.dump() + "]";
 
