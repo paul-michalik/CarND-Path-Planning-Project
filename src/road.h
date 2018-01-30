@@ -7,8 +7,6 @@
 #include "sensors.h"
 #include "udacity.h"
 
-#include "ppl_planner.h"
-
 namespace pp {
     struct lane_info {
         struct car {
@@ -174,30 +172,5 @@ namespace pp {
         }
 
         return lane_model;
-    }
-
-    namespace tests {
-        inline bool test_eq(std::vector<pp::lane_info> const& lane_env_model, pp_l::PathPlanner const& pl_)
-        {
-            if (lane_env_model.size() == pl_.lane_info.size()) {
-                return std::equal(
-                    lane_env_model.begin(), lane_env_model.end(),
-                    pl_.lane_info.begin(), pl_.lane_info.end(),
-                    [](pp::lane_info const& l_, pp_l::lane_info_t const & r_) {
-                    return
-                        lane_info::exists(l_.front) ? r_.front_car != -1 : r_.front_car == -1 &&
-                        lane_info::id(l_.front) == r_.front_car &&
-                        lane_info::gap(l_.front) == r_.front_gap &&
-                        lane_info::speed(l_.front) == r_.front_speed &&
-                        lane_info::exists(l_.back) ? r_.back_car != -1 : r_.back_car == -1 &&
-                        lane_info::id(l_.back) == r_.back_car &&
-                        lane_info::gap(l_.back) == r_.back_gap &&
-                        lane_info::speed(l_.back) == r_.back_speed &&
-                        l_.is_feasible() == r_.feasible;
-                });
-            } else {
-                return false;
-            }
-        }
     }
 }

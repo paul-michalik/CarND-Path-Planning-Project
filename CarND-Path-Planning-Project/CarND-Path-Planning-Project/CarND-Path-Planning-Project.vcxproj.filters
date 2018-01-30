@@ -32,9 +32,6 @@
     <ClInclude Include="..\..\src\udacity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\ppl_planner.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\geo.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -138,7 +138,6 @@
     <ClInclude Include="..\..\src\constants.h" />
     <ClInclude Include="..\..\src\decision_engine.h" />
     <ClInclude Include="..\..\src\localization.h" />
-    <ClInclude Include="..\..\src\ppl_planner.h" />
     <ClInclude Include="..\..\src\geo.h" />
     <ClInclude Include="..\..\src\map.h" />
     <ClInclude Include="..\..\src\planner.h" />

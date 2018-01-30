@@ -6,8 +6,6 @@
 #include <tuple>
 #include <vector>
 
-#include "ppl_planner.h"
-
 namespace pp {
 
     enum class engine_states : int {
@@ -217,21 +215,4 @@ namespace pp {
                 << pp::mps2mph(_target.speed) << std::endl;
         }
     };
-
-    namespace tests {
-
-        inline bool test_eq(engine_states const& l_, pp_l::PathPlanner::STATE const& r_)
-        {
-            return static_cast<int>(l_) == static_cast<int>(r_);
-        }
-
-        inline bool test_eq(decision_engine const& engine_, pp_l::PathPlanner const& pl_)
-        {
-            return test_eq(engine_.get_current().state, pl_.state_) &&
-                pp::round(engine_.get_current().s, 2) == pp::round(pl_.state_s_, 2) &&
-                engine_.get_target().lane_id == pl_.target_lane &&
-                pp::round(engine_.get_target().speed, 2) == pp::round(pl_.target_speed, 2) &&
-                engine_.get_target().changing_into_lane_id == pl_.changing_lane;
-        }
-    }
 }

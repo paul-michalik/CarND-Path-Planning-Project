@@ -5,8 +5,6 @@
 #include <cstddef>
 #include <cassert>
 
-#include "ppl_planner.h"
-
 namespace pp {
     // ego position with history
     struct localization_info {
@@ -54,21 +52,5 @@ namespace pp {
             std::min(pp::c_path_point_count, t_.previous_path.size());
 
         return loc;
-    }
-
-    namespace tests {
-        inline bool test_eq(localization_info const& ref_, pp_l::PathPlanner const& pl_)
-        {
-            return
-                ref_.ego.d == pl_.ref_d &&
-                ref_.ego.s == pl_.ref_s &&
-                ref_.ego.speed == pl_.ref_speed &&
-                ref_.ego.x == pl_.ref_x &&
-                ref_.ego.y == pl_.ref_y &&
-                ref_.ego.yaw == pl_.ref_yaw &&
-                ref_.lane_id == pl_.ref_lane &&
-                ref_.prev_x == pl_.ref_x_prev &&
-                ref_.prev_y == pl_.ref_y_prev;
-        }
     }
 }

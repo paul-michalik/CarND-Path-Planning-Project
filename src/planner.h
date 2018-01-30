@@ -18,29 +18,11 @@
 #include <tuple>
 #include <stdexcept>
 #include <cassert>
-#include "ppl_planner.h"
 
 namespace pp {
 
-    namespace tests {
-        inline bool test_eq(std::pair<std::vector<double>, std::vector<double>> const& l_, pp::path const& r_)
-        {
-            static const auto pred = [](auto const& l_, auto const&  r_) {
-                return pp::round(l_, 2) == pp::round(r_, 2);
-            };
-
-            return
-                l_.first.size() == r_.x.size() &&
-                l_.second.size() == r_.y.size() &&
-                std::equal(l_.first.begin(), l_.first.end(), r_.x.begin(), r_.x.end(), pred)  &&
-                std::equal(l_.second.begin(), l_.second.end(), r_.y.begin(), r_.y.end(), pred);
-        }
-    }
-
     class planner {
         pp::map _map;
-        
-        mutable pp_l::PathPlanner _planner;
     public:
        
         decision_engine _engine;
@@ -147,50 +129,10 @@ namespace pp {
         planner(pp::map map_)
             : _map(map_)
         {
-            _planner.initialize(_map);
-            _planner.reset();
         }
 
         auto get_next_vals(pp::telemetry_data const& t_, double dt_)
         {
-//#define CARND_USE_PPL
-#ifdef CARND_USE_PPL   
-            pp::path path;
-            {
-                _planner.compute_reference(t_, dt_);
-                
-                auto loc = pp::localize(t_, dt_);
-                assert(tests::test_eq(loc, _planner));
-
-                _planner.track_lap(t_); 
-                _planner.process_sensor_fusion(t_, dt_);
-               
-                auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_); 
-                assert(tests::test_eq(lane_model, _planner));
-
-                _planner.create_plan(t_, dt_);
-
-                _engine.next_target(_map, loc, lane_model);
-                _current = _engine.get_current();
-                _target = _engine.get_target();
-                assert(tests::test_eq(_engine, _planner));
-
-                _planner.collision_avoidance();
-               
-                avoid_collision(lane_model);
-                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
-
-                _planner.speed_control();
-                adjust_speed(loc);
-                assert(pp::round(_target.speed, 2) == pp::round(_planner.target_speed, 2));
-
-                _planner.build_path(t_, _planner.target_lane, _planner.target_speed, path, dt_);
-                auto trajectory = make_trajectory(_map, loc, t_, dt_);
-                assert(tests::test_eq(trajectory, path));
-            }
-
-            return std::make_pair(path.x, path.y);
-#else
             auto loc = pp::localize(t_, dt_);
 
             auto lane_model = pp::make_lane_model(loc.ego.s, t_, dt_);
@@ -204,7 +146,6 @@ namespace pp {
             adjust_speed(loc);
 
             return make_trajectory(_map, loc, t_, dt_);
-#endif
         }
     };
 }
