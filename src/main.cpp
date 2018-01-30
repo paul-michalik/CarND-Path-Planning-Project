@@ -1,3 +1,6 @@
+#include "stdafx.h"
+#include "map.h"
+#include "planner.h"
 #include <fstream>
 #include <math.h>
 #include <uWS/uWS.h>
@@ -200,6 +203,19 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
+  pp::planner planner{
+      pp::map{
+          map_waypoints_x,
+          map_waypoints_y,
+          map_waypoints_s,
+          map_waypoints_dx,
+          map_waypoints_dy,
+          map_file_
+      }
+  };
+
+  auto prev_time = std::chrono::high_resolution_clock::now();
+
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -217,35 +233,25 @@ int main() {
         string event = j[0].get<string>();
         
         if (event == "telemetry") {
-          // j[1] is the data JSON object
-          
-        	// Main car's localization Data
-          	double car_x = j[1]["x"];
-          	double car_y = j[1]["y"];
-          	double car_s = j[1]["s"];
-          	double car_d = j[1]["d"];
-          	double car_yaw = j[1]["yaw"];
-          	double car_speed = j[1]["speed"];
+            // j[1] is the data JSON object
 
-          	// Previous path data given to the Planner
-          	auto previous_path_x = j[1]["previous_path_x"];
-          	auto previous_path_y = j[1]["previous_path_y"];
-          	// Previous path's end s and d values 
-          	double end_path_s = j[1]["end_path_s"];
-          	double end_path_d = j[1]["end_path_d"];
+            // Main car's localization Data
+            pp::telemetry_data t;
+            pp::from_json(j[1], t);
 
-          	// Sensor Fusion Data, a list of all other cars on the same side of the road.
-          	auto sensor_fusion = j[1]["sensor_fusion"];
+            auto curr_time =
+                std::chrono::high_resolution_clock::now();
+            auto diff_time =
+                std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time);
+            // no way to use real timing. the motions model is too bad for that
+            auto next_vals = planner.get_next_vals(t, 0.02/*diff_time.count()/1000.*/);
+            prev_time = curr_time;
 
-          	json msgJson;
-
-          	vector<double> next_x_vals;
-          	vector<double> next_y_vals;
-
-
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          	msgJson["next_x"] = next_x_vals;
-          	msgJson["next_y"] = next_y_vals;
+            // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+            json msgJson{
+               {"next_x", next_vals.first},
+               {"next_y", next_vals.second}
+            };
 
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
