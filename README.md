@@ -1,7 +1,56 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
+
+
+## Model description
+
+The model is based on the suggestions from the Q&A session. A discrete decision engine makes decisions based on current state and informations from the telemetry and sensors. The implementation in `planner.h` consists of a `pp::planner` which provides a method `get_next_vals` to retrieve a new path based on following information:
+- Next chunk of telemetry data
+- Time difference between a previous and current invocation
+- The internal state of the planner
+
+The planner proceeds in five distinct steps:
+
+1. Localize the car with respect to given map
+2. Determine road environment model
+3. Decide which target lane and target speed are optimal 
+4. Make sure that the calculated targets do not violate the speed limit and that they do not cause collision with other cars
+5. Calculate a resulting trajectory based on given targets   
+
+### Localization
+
+The implementation is in `localization.h` and the actual localization is performed in function `pp::localize`. Given the telemetry data and the environment map the function calculates the `localization_info` which consists of ego position and motion of the car and the information about the current lane.   
+### Road environment model
+
+The implementation is in `road.h` and the model is calculated in the function `pp::make_lane_model`. The model is represented by an array of ``lane_info` objects which contain following information for each lane of the road:
+
+- the closest car in front of the ego position, its speed and the gap towards the ego position in Frenet frame coordinates
+- the closest car in the back of the current ego position, its speed and the gap towards the ego position in Frenet frame coordinates 
+
+### The decision engine
+
+The planner maintains information about an internal state. The possible internal states and transitions among them are defined by a discrete `pp::decision_engine` which calculates the next target values based on current target and localization information provided by the localization module. The `pp::decision_engine` is implemented in `decision_engine.h` 
+
+The internal states are:
+- `changing_lane`
+- `keeping_lane`
+- `prepare_changing_lane`
+
+The engine determines the currently best lane `pp::decision_engine::get_best_lane` and sets it as a next target. It evaluates a set of rules based on simple physics and logic and decides if a switch from current to the target lane is feasible. The best lane is defined as a lane with maximum velocity which in turn is defined by the current lane situation as represented by the environment model.   
+
+### Adjustment of speed and collision avoidance
+
+The methods `pp::planner::avoid_collison` and `pp::planner::adjust_speed` constrain the target speed based on the safety margins for maximum speed and a minimum gap between the ego vehicle and the vehicle in front of ot in the current lane.    
+
+### The trajectory calculation
+
+The resulting trajectory is calculated based on proposals from Q&A session. It uses the information about the current and next predicted locations to determine a discrete sequence of trajectory anchors which in turn are interpolated by a cubic spline curve. This is implemented in the methods `pp::planner::make_anchors` and `pp::planner::make_trajectory`.
+
+### Reflection
+
+This was by far the most challenging project in the CarND program. I had a very hard time to come up with a proper interpretation of the data delivered by the simulator and the logic which the simulator uses to actually move the car. The testing of the behavior was very difficult due to the indeterministic environment and lack of testable models - I spent much more time on this project than initially planned.  
+
+## Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
 ### Goals

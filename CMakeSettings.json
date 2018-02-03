@@ -1,0 +1,41 @@
+{
+    // See https://go.microsoft.com//fwlink//?linkid=834763 for more information about this file.
+    "configurations": [
+        {
+            "name": "Linux-Debug",
+            "generator": "Unix Makefiles",
+            "remoteMachineName": "${defaultRemoteMachineName}",
+            "configurationType": "Debug",
+            "remoteCMakeListsRoot": "/usr/src/Udacity/CarND-Path-Planning-Project",
+            "cmakeExecutable": "/opt/cmake-3.9.0/bin/cmake",
+            "remoteBuildRoot": "/var/tmp/CMakeBuilds/CarND-Path-Planning-Project/build/${name}",
+            "remoteInstallRoot": "/var/tmp/CMakeBuilds/CarND-Path-Planning-Project/install/${name}",
+            "remoteCopySources": false,
+            "remoteCopySourcesOutputVerbosity": "Normal",
+            "remoteCopySourcesConcurrentCopies": "10",
+            "remoteCopySourcesMethod": "sftp",
+            "cmakeCommandArgs": "",
+            "buildCommandArgs": "",
+            "ctestCommandArgs": "",
+            "inheritEnvironments": [ "linux-x64" ]
+        },
+        {
+            "name": "Linux-Release",
+            "generator": "Unix Makefiles",
+            "remoteMachineName": "${defaultRemoteMachineName}",
+            "configurationType": "Release",
+            "remoteCMakeListsRoot": "/usr/src/Udacity/CarND-Path-Planning-Project",
+            "cmakeExecutable": "/opt/cmake-3.9.0/bin/cmake",
+            "remoteBuildRoot": "/var/tmp/CMakeBuilds/CarND-Path-Planning-Project/build/${name}",
+            "remoteInstallRoot": "/var/tmp/CMakeBuilds/CarND-Path-Planning-Project//${name}",
+            "remoteCopySources": false,
+            "remoteCopySourcesOutputVerbosity": "Normal",
+            "remoteCopySourcesConcurrentCopies": "10",
+            "remoteCopySourcesMethod": "sftp",
+            "cmakeCommandArgs": "",
+            "buildCommandArgs": "",
+            "ctestCommandArgs": "",
+            "inheritEnvironments": [ "linux-x64" ]
+        }
+    ]
+}
