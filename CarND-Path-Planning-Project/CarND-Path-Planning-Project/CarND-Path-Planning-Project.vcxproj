@@ -140,6 +140,7 @@
     <ClInclude Include="..\..\src\decision_engine.h" />
     <ClInclude Include="..\..\src\localization.h" />
     <ClInclude Include="..\..\src\geo.h" />
+    <ClInclude Include="..\..\src\log.h" />
     <ClInclude Include="..\..\src\map.h" />
     <ClInclude Include="..\..\src\planner.h" />
     <ClInclude Include="..\..\src\road.h" />

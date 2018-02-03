@@ -3,6 +3,8 @@
 #include "localization.h"
 #include "map.h"
 #include "road.h"
+#include "log.h"
+
 #include <tuple>
 #include <vector>
 

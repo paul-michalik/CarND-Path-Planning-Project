@@ -7,6 +7,7 @@
 #include "map.h"
 #include "geo.h"
 #include "sensors.h"
+#include "log.h"
 #include "udacity.h"
 
 #include <spline.h>
